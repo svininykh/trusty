@@ -6,7 +6,9 @@ import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.TrustAnchor;
@@ -67,10 +69,18 @@ public class TrustyCertificateValidator {
                 @Override
                 public void check(Certificate cert, Collection<String> unresolvedCritExts) throws CertPathValidatorException {
                     try {
+                        X509Certificate trustedCert = ocspValidator.getRepository().getTrustedCert((X509Certificate) cert);
+                        
+                        if (trustedCert != null) {
+                            try {
+                                trustedCert.checkValidity();
+                            } catch (CertificateExpiredException | CertificateNotYetValidException e) {
+                                throw new CertPathValidatorException(e);
+                            }
+                        }
+                        
                         if (!disableOCSP) {
                             ocspValidator.validate((X509Certificate) cert);
-                            
-                            X509Certificate trustedCert = ocspValidator.getRepository().getTrustedCert((X509Certificate) cert);
                             
                             if (trustedCert != null) {//проверяем на отозванность доверенный сертификат, который не входит в цепочку доверия
                                 ocspValidator.validate(trustedCert);
