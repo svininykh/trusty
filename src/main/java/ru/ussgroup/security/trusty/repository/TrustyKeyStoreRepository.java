@@ -1,4 +1,4 @@
-package ru.ussgroup.security.trusty;
+package ru.ussgroup.security.trusty.repository;
 
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -12,15 +12,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.common.collect.ImmutableList;
 
-public class KeyStoreTrustyRepository implements TrustyRepository {
-    private static Map<String, X509Certificate> intermediateMap = new ConcurrentHashMap<>();
-    private static Map<String, X509Certificate> trustedMap = new ConcurrentHashMap<>();
+public class TrustyKeyStoreRepository implements TrustyRepository {
+    private final Map<String, X509Certificate> intermediateMap = new ConcurrentHashMap<>();
+    private final Map<String, X509Certificate> trustedMap = new ConcurrentHashMap<>();
 
-    static {
+    public TrustyKeyStoreRepository(String resourcePath) {
         try {
             KeyStore keyStore = KeyStore.getInstance("jks");
             
-            try (InputStream in = KeyStoreTrustyRepository.class.getResourceAsStream("/ca/repository.jks")) {
+            try (InputStream in = TrustyKeyStoreRepository.class.getResourceAsStream(resourcePath)) {
                 keyStore.load(in, "123456".toCharArray());
             }
 
@@ -51,11 +51,21 @@ public class KeyStoreTrustyRepository implements TrustyRepository {
     }
     
     @Override
+    public X509Certificate getTrustedCert(X509Certificate cert) {
+        return trustedMap.get(cert.getSigAlgOID() + Base64.getEncoder().encodeToString(cert.getIssuerX500Principal().getEncoded()));
+    }
+    
+    @Override
     public X509Certificate getIssuer(X509Certificate cert) {
         X509Certificate issuer = intermediateMap.get(cert.getSigAlgOID() + Base64.getEncoder().encodeToString(cert.getIssuerX500Principal().getEncoded()));
         
         if (issuer != null) return issuer; 
             
         return trustedMap.get(cert.getSigAlgOID() + Base64.getEncoder().encodeToString(cert.getIssuerX500Principal().getEncoded()));
+    }
+
+    @Override
+    public Collection<X509Certificate> getIntermediateCerts() {
+        return ImmutableList.copyOf(intermediateMap.values());
     }
 }

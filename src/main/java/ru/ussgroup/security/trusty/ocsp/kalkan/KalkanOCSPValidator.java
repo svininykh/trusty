@@ -30,25 +30,24 @@ import kz.gov.pki.kalkan.ocsp.OCSPReqGenerator;
 import kz.gov.pki.kalkan.ocsp.OCSPResp;
 import kz.gov.pki.kalkan.ocsp.RevokedStatus;
 import kz.gov.pki.kalkan.ocsp.SingleResp;
-import ru.ussgroup.security.trusty.KeyStoreTrustyRepository;
 import ru.ussgroup.security.trusty.TrustyCertificateValidator;
-import ru.ussgroup.security.trusty.TrustyRepository;
 import ru.ussgroup.security.trusty.ocsp.DnsResolver;
 import ru.ussgroup.security.trusty.ocsp.OCSPNonceException;
 import ru.ussgroup.security.trusty.ocsp.OCSPNotAvailableException;
 import ru.ussgroup.security.trusty.ocsp.OCSPStatusInfo;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
+import ru.ussgroup.security.trusty.repository.TrustyRepository;
 
-public class TrustyKalkanAsyncOCSPValidator implements TrustyOCSPValidator {
+public class KalkanOCSPValidator implements TrustyOCSPValidator {
     private final String ocspUrl;
     
     private final static AsyncHttpClient httpClient;
     
-    private SecureRandom sr = new SecureRandom();
+    private final SecureRandom sr = new SecureRandom();
     
-    private TrustyRepository trustyRepository;
+    private final TrustyRepository trustyRepository;
     
-    private TrustyCertificateValidator validator;
+    private final TrustyCertificateValidator validator;
     
     static {
         boolean exists = false;
@@ -76,14 +75,10 @@ public class TrustyKalkanAsyncOCSPValidator implements TrustyOCSPValidator {
         });
     }
     
-    public TrustyKalkanAsyncOCSPValidator(String ocspUrl) {
-        this(ocspUrl, new KeyStoreTrustyRepository());
-    }
-
-    public TrustyKalkanAsyncOCSPValidator(String ocspUrl, TrustyRepository trustyRepository) {
+    public KalkanOCSPValidator(String ocspUrl, TrustyRepository trustyRepository) {
         this.ocspUrl = ocspUrl;
         this.trustyRepository = trustyRepository;
-        validator = new TrustyCertificateValidator(this);
+        validator = new TrustyCertificateValidator.Builder(this).disableOCSP().build();
         DnsResolver.addDomainName(ocspUrl);
     }
     
@@ -181,5 +176,10 @@ public class TrustyKalkanAsyncOCSPValidator implements TrustyOCSPValidator {
         exts.put(OCSPObjectIdentifiers.id_pkix_ocsp_pref_sig_algs, new X509Extension(false, new DEROctetString(new DERSequence(prefSigAlgsV))));
         
         return new X509Extensions(exts);
+    }
+
+    @Override
+    public TrustyRepository getRepository() {
+        return trustyRepository;
     }
 }

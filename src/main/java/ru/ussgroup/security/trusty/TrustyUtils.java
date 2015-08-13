@@ -2,8 +2,15 @@ package ru.ussgroup.security.trusty;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.security.InvalidKeyException;
 import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
@@ -33,6 +40,34 @@ import java.util.Enumeration;
 1.2.398.3.3.2.4 Политика применения регистрационных свидетельств аутентификации физических лиц Республики Казахстан
 */
 public class TrustyUtils {
+    public static void verifySignature(byte[] data, byte[] signature, X509Certificate cert) throws SignatureException, CertPathValidatorException, CertificateException {
+        try {
+            Signature s = Signature.getInstance(cert.getPublicKey().getAlgorithm());
+            
+            s.initVerify(cert.getPublicKey());
+            s.update(data);
+            
+            if (!s.verify(signature)) {
+                throw new SignatureException("Signature not valid");
+            }
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    public static byte[] sign(byte[] data, PrivateKey privateKey) throws SignatureException {
+        try {
+            Signature signature = Signature.getInstance(privateKey.getAlgorithm());
+            
+            signature.initSign(privateKey);
+            signature.update(data);
+            
+            return signature.sign();
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
     public static X509Certificate loadCertFromResources(String path) {
         try (InputStream in = TrustyUtils.class.getResourceAsStream(path)) {
             return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(in);
