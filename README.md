@@ -17,9 +17,7 @@
 7. Проверка является ли сертификат персональным или сертификатом ЮЛ.
 
 ####Пример кода:
-
 ```java
-
 package ru.ussgroup.security.trusty;
 
 import java.nio.charset.StandardCharsets;
@@ -64,5 +62,4 @@ public class VerifySignatureExampleTest {
         validator.validate(cert);
     }
 }
-
 ```
