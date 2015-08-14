@@ -6,14 +6,20 @@ import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertPathValidatorException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
+
+import javax.security.auth.x500.X500PrivateCredential;
+
+import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
 
 /*
  * getExtendedKeyUsage
@@ -40,11 +46,25 @@ import java.util.Enumeration;
 1.2.398.3.3.2.4 Политика применения регистрационных свидетельств аутентификации физических лиц Республики Казахстан
 */
 public class TrustyUtils {
-    public static void verifySignature(byte[] data, byte[] signature, X509Certificate cert) throws SignatureException, CertPathValidatorException, CertificateException {
+    static {
+        boolean exists = false;
+    
+        for (Provider p : Security.getProviders()) {
+            if (p.getName().equals(KalkanProvider.PROVIDER_NAME)) {
+                exists = true;
+            }
+        }
+    
+        if (!exists) {
+            Security.addProvider(new KalkanProvider());
+        }
+    }
+    
+    public static void verifySignature(byte[] data, byte[] signature, PublicKey publicKey) throws SignatureException, CertPathValidatorException, CertificateException {
         try {
-            Signature s = Signature.getInstance(cert.getPublicKey().getAlgorithm());
+            Signature s = Signature.getInstance(publicKey.getAlgorithm());
             
-            s.initVerify(cert.getPublicKey());
+            s.initVerify(publicKey);
             s.update(data);
             
             if (!s.verify(signature)) {
@@ -84,31 +104,31 @@ public class TrustyUtils {
         }
     }
     
-    public static X509Certificate loadKeyFromResources(String path, String password) {
+    public static X500PrivateCredential loadCredentialFromResources(String path, String password) {
         try {
             KeyStore keyStore = KeyStore.getInstance("pkcs12");
             
             try (InputStream in = TrustyUtils.class.getResourceAsStream(path)) {
-                return loadKeyFromStream(password, keyStore, in);
+                return loadCredentialFromStream(password, keyStore, in);
             } 
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
     
-    public static X509Certificate loadKeyFromFile(String path, String password) {
+    public static X500PrivateCredential loadCredentialFromFile(String path, String password) {
         try {
             KeyStore keyStore = KeyStore.getInstance("pkcs12");
             
             try (InputStream in = new FileInputStream(path)) {
-                return loadKeyFromStream(password, keyStore, in);
+                return loadCredentialFromStream(password, keyStore, in);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static X509Certificate loadKeyFromStream(String password, KeyStore keyStore, InputStream in) {
+    private static X500PrivateCredential loadCredentialFromStream(String password, KeyStore keyStore, InputStream in) {
         try {
             keyStore.load(in, password.toCharArray());
             
@@ -116,9 +136,9 @@ public class TrustyUtils {
             
             while (aliases.hasMoreElements()){
                 String alias = aliases.nextElement();
-                for (Certificate c : keyStore.getCertificateChain(alias)) {
-                    return (X509Certificate) c;
-                }
+                
+                return new X500PrivateCredential((X509Certificate)keyStore.getCertificate(alias), 
+                                                      (PrivateKey)keyStore.getKey(alias, password.toCharArray()));
             }
             
             return null;

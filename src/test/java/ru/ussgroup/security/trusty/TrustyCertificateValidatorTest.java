@@ -33,10 +33,10 @@ public class TrustyCertificateValidatorTest {
     
     @Test
     public void shouldValidateCertificates() throws Exception {
-        X509Certificate oldGostCert = TrustyUtils.loadKeyFromResources("/example/ul_gost_1.0.p12", "123456");
-        X509Certificate newGostCert = TrustyUtils.loadKeyFromResources("/example/ul_gost_2.0.p12", "123456");
-        X509Certificate oldRsaCert = TrustyUtils.loadKeyFromResources("/example/ul_rsa_1.0.p12", "123456");
-        X509Certificate newRsaCert = TrustyUtils.loadKeyFromResources("/example/ul_rsa_2.0.p12", "123456");
+        X509Certificate oldGostCert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_1.0.p12", "123456").getCertificate();
+        X509Certificate newGostCert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_2.0.p12", "123456").getCertificate();
+        X509Certificate oldRsaCert = TrustyUtils.loadCredentialFromResources("/example/ul_rsa_1.0.p12", "123456").getCertificate();
+        X509Certificate newRsaCert = TrustyUtils.loadCredentialFromResources("/example/ul_rsa_2.0.p12", "123456").getCertificate();
         
         validator.validate(oldGostCert);
         validator.validate(newGostCert);
@@ -46,35 +46,35 @@ public class TrustyCertificateValidatorTest {
     
     @Test(expected = CertPathValidatorException.class)
     public void shouldThrowExceptionIfExpired() throws CertPathValidatorException, CertificateException {
-        X509Certificate oldExpiredRsaCert = TrustyUtils.loadKeyFromResources("/example/ul_rsa_1.0_expired.p12", "123456");
+        X509Certificate oldExpiredRsaCert = TrustyUtils.loadCredentialFromResources("/example/ul_rsa_1.0_expired.p12", "123456").getCertificate();
         
         validator.validate(oldExpiredRsaCert);
     }
     
     @Test
     public void shouldParallelValidateOldGostCert() throws Exception {
-        X509Certificate cert = TrustyUtils.loadKeyFromResources("/example/ul_gost_1.0.p12", "123456");
+        X509Certificate cert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_1.0.p12", "123456").getCertificate();
         
         shouldParallelValidateOldCertificates(cert);
     }
     
     @Test
     public void shouldParallelValidateOldRsaCert() throws Exception {
-        X509Certificate cert = TrustyUtils.loadKeyFromResources("/example/ul_rsa_1.0.p12", "123456");
+        X509Certificate cert = TrustyUtils.loadCredentialFromResources("/example/ul_rsa_1.0.p12", "123456").getCertificate();
         
         shouldParallelValidateOldCertificates(cert);
     }
     
     @Test
     public void shouldParallelValidateNewGostCert() throws Exception {
-        X509Certificate cert = TrustyUtils.loadKeyFromResources("/example/ul_gost_2.0.p12", "123456");
+        X509Certificate cert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_2.0.p12", "123456").getCertificate();
         
         shouldParallelValidateOldCertificates(cert);
     }
     
     @Test
     public void shouldParallelValidateNewRsaCert() throws Exception {
-        X509Certificate cert = TrustyUtils.loadKeyFromResources("/example/ul_rsa_2.0.p12", "123456");
+        X509Certificate cert = TrustyUtils.loadCredentialFromResources("/example/ul_rsa_2.0.p12", "123456").getCertificate();
         
         shouldParallelValidateOldCertificates(cert);
     }

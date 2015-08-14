@@ -2,6 +2,8 @@ package ru.ussgroup.security.trusty;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
@@ -19,10 +21,25 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
 import ru.ussgroup.security.trusty.ocsp.OCSPNotAvailableException;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
 
 public class TrustyCertificateValidator {
+    static {
+        boolean exists = false;
+    
+        for (Provider p : Security.getProviders()) {
+            if (p.getName().equals(KalkanProvider.PROVIDER_NAME)) {
+                exists = true;
+            }
+        }
+    
+        if (!exists) {
+            Security.addProvider(new KalkanProvider());
+        }
+    }
+    
     private final TrustyOCSPValidator ocspValidator;
     
     private String iin, bin;
@@ -32,6 +49,13 @@ public class TrustyCertificateValidator {
     public TrustyCertificateValidator(TrustyOCSPValidator ocspValidator, String iin, String bin, boolean checkIsEnterprise, 
                                       boolean checkIsPersonal, boolean checkForSigning, boolean checkForAuth, boolean disableOCSP) {
         this.ocspValidator = ocspValidator;
+        this.iin = iin;
+        this.bin = bin;
+        this.checkIsEnterprise = checkIsEnterprise;
+        this.checkIsPersonal = checkIsPersonal;
+        this.checkForSigning = checkForSigning;
+        this.checkForAuth = checkForAuth;
+        this.disableOCSP = disableOCSP;
     }
 
     public void validate(X509Certificate cert) throws CertPathValidatorException, CertificateException {

@@ -51,17 +51,19 @@ public class KalkanOCSPValidator implements TrustyOCSPValidator {
     
     static {
         boolean exists = false;
-
+    
         for (Provider p : Security.getProviders()) {
             if (p.getName().equals(KalkanProvider.PROVIDER_NAME)) {
                 exists = true;
             }
         }
-
+    
         if (!exists) {
             Security.addProvider(new KalkanProvider());
         }
-        
+    }
+    
+    static {
         AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setConnectTimeout(10_000)
                                                                        .setRequestTimeout(10_000)
                                                                        .build();
@@ -124,7 +126,7 @@ public class KalkanOCSPValidator implements TrustyOCSPValidator {
             
             X509Certificate ocspcert = brep.getCerts(KalkanProvider.PROVIDER_NAME)[0];
             
-//            validator.validate(ocspcert);ошибка валидации: провайдер не поддерживает критическое расширение
+//            validator.validate(ocspcert);//ошибка валидации: провайдер не поддерживает критическое расширение
             
             if (!brep.verify(ocspcert.getPublicKey(), KalkanProvider.PROVIDER_NAME)) {
                 throw new OCSPException("Unable to verify response");
