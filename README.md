@@ -66,3 +66,21 @@ public class VerifySignatureExampleTest {
 }
 
 ```
+####Подключение через Maven:
+
+Необходимо добавить в pom.xml строки:
+
+  <dependencies>
+    <dependency>
+      <groupId>ru.uss-group.security</groupId>
+      <artifactId>trusty</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+  
+  <repositories>
+    <repository>
+        <id>ru.uss-group</id>
+        <url>https://raw.githubusercontent.com/man4j/trusty/master/maven</url>
+    </repository>
+  </repositories>
