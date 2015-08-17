@@ -37,7 +37,9 @@ public class VerifySignatureExampleTest {
         
         TrustyCachedOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
         
-        TrustyCertificateValidator validator = new TrustyCertificateValidator.Builder(cachedOCSPValidator).build();
+        TrustyCertificateValidator validator = new TrustyCertificateValidator.Builder(cachedOCSPValidator).checkIsEnterprise()
+                                                                                                          .checkForSigning()
+                                                                                                          .build();
         
         validator.validate(cert);
     }
