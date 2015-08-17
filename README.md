@@ -69,7 +69,7 @@ public class VerifySignatureExampleTest {
 ####Подключение через Maven:
 
 Необходимо добавить в pom.xml строки:
-
+```xml
   <dependencies>
     <dependency>
       <groupId>ru.uss-group.security</groupId>
@@ -84,3 +84,5 @@ public class VerifySignatureExampleTest {
         <url>https://raw.githubusercontent.com/man4j/trusty/master/maven</url>
     </repository>
   </repositories>
+  
+  ```
