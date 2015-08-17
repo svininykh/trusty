@@ -1,4 +1,4 @@
-### T-R-U-S-T-Y
+### T-R-U-S-T-Y (Only for Java 8)
 
 ####Возможности:
 
