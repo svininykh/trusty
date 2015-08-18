@@ -86,3 +86,5 @@ public class VerifySignatureExampleTest {
   </repositories>
   
   ```
+
+Обратная связь: man4j@ya.ru
