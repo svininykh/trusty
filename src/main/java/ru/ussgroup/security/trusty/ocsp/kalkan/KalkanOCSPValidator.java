@@ -38,6 +38,9 @@ import ru.ussgroup.security.trusty.ocsp.OCSPStatusInfo;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
 
+/**
+ * This class is thread-safe
+ */
 public class KalkanOCSPValidator implements TrustyOCSPValidator {
     private final String ocspUrl;
     

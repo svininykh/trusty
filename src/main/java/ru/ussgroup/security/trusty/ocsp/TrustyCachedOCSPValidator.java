@@ -8,6 +8,9 @@ import com.google.common.cache.CacheBuilder;
 
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
 
+/**
+ * This class is thread-safe
+ */
 public class TrustyCachedOCSPValidator implements TrustyOCSPValidator {
     private final Cache<String, OCSPStatusInfo> certificateStatusCache;
     

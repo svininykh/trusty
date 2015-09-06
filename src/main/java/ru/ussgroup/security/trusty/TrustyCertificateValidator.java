@@ -25,6 +25,9 @@ import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
 import ru.ussgroup.security.trusty.ocsp.OCSPNotAvailableException;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
 
+/**
+ * This class is thread-safe 
+ */
 public class TrustyCertificateValidator {
     static {
         boolean exists = false;
@@ -42,9 +45,9 @@ public class TrustyCertificateValidator {
     
     private final TrustyOCSPValidator ocspValidator;
     
-    private String iin, bin;
+    private final String iin, bin;
     
-    private boolean checkIsEnterprise, checkIsPersonal, checkForSigning, checkForAuth, disableOCSP;
+    private final boolean checkIsEnterprise, checkIsPersonal, checkForSigning, checkForAuth, disableOCSP;
     
     public TrustyCertificateValidator(TrustyOCSPValidator ocspValidator, String iin, String bin, boolean checkIsEnterprise, 
                                       boolean checkIsPersonal, boolean checkForSigning, boolean checkForAuth, boolean disableOCSP) {
@@ -119,11 +122,11 @@ public class TrustyCertificateValidator {
             CertPathValidator.getInstance("PKIX").validate(CertificateFactory.getInstance("X.509").generateCertPath(list), params);
             
             if (checkForAuth && !TrustyKeyUsageChecker.getKeyUsage(cert).contains(TrustyKeyUsage.AUTHENTICATION)) {
-                throw new CertificateException("Certificate not for auth");
+                throw new CertificateException("Certificate is not for auth");
             }
             
             if (checkForSigning && !TrustyKeyUsageChecker.getKeyUsage(cert).contains(TrustyKeyUsage.SIGNING)) {
-                throw new CertificateException("Certificate not for signing");
+                throw new CertificateException("Certificate is not for signing");
             }
             
             SubjectDNParser p = new SubjectDNParser(cert.getSubjectDN().getName());

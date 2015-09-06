@@ -68,7 +68,7 @@ public class TrustyUtils {
             s.update(data);
             
             if (!s.verify(signature)) {
-                throw new SignatureException("Signature not valid");
+                throw new SignatureException("Signature is not valid");
             }
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             throw new RuntimeException(e);

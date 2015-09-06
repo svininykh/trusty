@@ -11,7 +11,7 @@ public class SubjectDNParser {
         
         names = new HashMap<>();
         
-        for (String value :  values) {
+        for (String value : values) {
             names.put(value.split("=")[0].trim(), value.split("=")[1].trim());
         }
     }

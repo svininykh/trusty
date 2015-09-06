@@ -12,6 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.common.collect.ImmutableList;
 
+/**
+ * This class is thread-safe
+ */
 public class TrustyKeyStoreRepository implements TrustyRepository {
     private final Map<String, X509Certificate> intermediateMap = new ConcurrentHashMap<>();
     private final Map<String, X509Certificate> trustedMap = new ConcurrentHashMap<>();
@@ -29,7 +32,7 @@ public class TrustyKeyStoreRepository implements TrustyRepository {
             while (aliases.hasMoreElements()) {
                 X509Certificate cert = (X509Certificate) keyStore.getCertificate(aliases.nextElement());
                 
-                if (Arrays.equals(cert.getSubjectX500Principal().getEncoded(),cert.getIssuerX500Principal().getEncoded())) {
+                if (Arrays.equals(cert.getSubjectX500Principal().getEncoded(), cert.getIssuerX500Principal().getEncoded())) {
                     trustedMap.put(cert.getSigAlgOID() + Base64.getEncoder().encodeToString(cert.getSubjectX500Principal().getEncoded()), cert);
                 } else {
                     intermediateMap.put(cert.getSigAlgOID() + Base64.getEncoder().encodeToString(cert.getSubjectX500Principal().getEncoded()), cert);
