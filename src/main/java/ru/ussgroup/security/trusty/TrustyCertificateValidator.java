@@ -17,6 +17,7 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
 import ru.ussgroup.security.trusty.ocsp.OCSPNotAvailableException;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
+import ru.ussgroup.security.trusty.repository.TrustyRepository;
 
 /**
  * This class is thread-safe 
@@ -45,13 +47,18 @@ public class TrustyCertificateValidator {
     
     private final TrustyOCSPValidator ocspValidator;
     
+    private final TrustyRepository repository;
+    
     private final String iin, bin;
     
     private final boolean checkIsEnterprise, checkIsPersonal, checkForSigning, checkForAuth, disableOCSP;
     
-    public TrustyCertificateValidator(TrustyOCSPValidator ocspValidator, String iin, String bin, boolean checkIsEnterprise, 
-                                      boolean checkIsPersonal, boolean checkForSigning, boolean checkForAuth, boolean disableOCSP) {
+    private final Date date;
+    
+    public TrustyCertificateValidator(TrustyOCSPValidator ocspValidator, TrustyRepository repository, String iin, String bin, boolean checkIsEnterprise, 
+                                      boolean checkIsPersonal, boolean checkForSigning, boolean checkForAuth, boolean disableOCSP, Date date) {
         this.ocspValidator = ocspValidator;
+        this.repository = repository == null ? ocspValidator.getRepository() : repository;
         this.iin = iin;
         this.bin = bin;
         this.checkIsEnterprise = checkIsEnterprise;
@@ -59,6 +66,7 @@ public class TrustyCertificateValidator {
         this.checkForSigning = checkForSigning;
         this.checkForAuth = checkForAuth;
         this.disableOCSP = disableOCSP;
+        this.date = date;
     }
 
     public void validate(X509Certificate cert) throws CertPathValidatorException, CertificateException {
@@ -69,7 +77,7 @@ public class TrustyCertificateValidator {
         X509Certificate current = cert;
         
         while (true) {        
-            X509Certificate x509IntermediateCert = ocspValidator.getRepository().getIntermediateCert(current);
+            X509Certificate x509IntermediateCert = repository.getIntermediateCert(current);
             
             if (x509IntermediateCert != null) {
                 list.add(x509IntermediateCert);
@@ -81,8 +89,9 @@ public class TrustyCertificateValidator {
         }
         
         try {
-            PKIXBuilderParameters params = new PKIXBuilderParameters(ocspValidator.getRepository().getTrustedCerts().stream().map(c -> new TrustAnchor(c, null)).collect(Collectors.toSet()), null);
+            PKIXBuilderParameters params = new PKIXBuilderParameters(repository.getTrustedCerts().stream().map(c -> new TrustAnchor(c, null)).collect(Collectors.toSet()), null);
             params.setRevocationEnabled(false);
+            params.setDate(date);
             params.addCertPathChecker(new PKIXCertPathChecker() {
                 @Override
                 public boolean isForwardCheckingSupported() {return false;}
@@ -96,7 +105,7 @@ public class TrustyCertificateValidator {
                 @Override
                 public void check(Certificate cert, Collection<String> unresolvedCritExts) throws CertPathValidatorException {
                     try {
-                        X509Certificate trustedCert = ocspValidator.getRepository().getTrustedCert((X509Certificate) cert);
+                        X509Certificate trustedCert = repository.getTrustedCert((X509Certificate) cert);
                         
                         if (trustedCert != null) {
                             try {
@@ -158,8 +167,16 @@ public class TrustyCertificateValidator {
         
         private boolean checkIsEnterprise, checkIsPersonal, checkForSigning, checkForAuth, disableOCSP;
         
+        private TrustyRepository repository;
+        
+        private Date date;
+        
         public Builder(TrustyOCSPValidator ocspValidator) {
             this.ocspValidator = ocspValidator;
+        }
+        
+        public Builder(TrustyRepository repository) {
+            this.repository = repository;
         }
 
         public Builder checkIin(String iin) {
@@ -197,8 +214,13 @@ public class TrustyCertificateValidator {
             return this;
         }
         
+        public Builder setDate(Date date) {
+            this.date = date;
+            return this;
+        }
+        
         public TrustyCertificateValidator build() {
-            return new TrustyCertificateValidator(ocspValidator, iin, bin, checkIsEnterprise, checkIsPersonal, checkForSigning, checkForAuth, disableOCSP);
+            return new TrustyCertificateValidator(ocspValidator, repository, iin, bin, checkIsEnterprise, checkIsPersonal, checkForSigning, checkForAuth, disableOCSP, date);
         }
     }
 }
