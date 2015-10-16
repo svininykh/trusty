@@ -2,6 +2,7 @@ package ru.ussgroup.security.trusty;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.Security;
 import java.security.cert.CertPathValidator;
@@ -55,8 +56,10 @@ public class TrustyCertificateValidator {
     
     private final Date date;
     
+    private final String provider;
+    
     public TrustyCertificateValidator(TrustyOCSPValidator ocspValidator, TrustyRepository repository, String iin, String bin, boolean checkIsEnterprise, 
-                                      boolean checkIsPersonal, boolean checkForSigning, boolean checkForAuth, boolean disableOCSP, Date date) {
+                                      boolean checkIsPersonal, boolean checkForSigning, boolean checkForAuth, boolean disableOCSP, Date date, String provider) {
         this.ocspValidator = ocspValidator;
         this.repository = repository == null ? ocspValidator.getRepository() : repository;
         this.iin = iin;
@@ -67,8 +70,9 @@ public class TrustyCertificateValidator {
         this.checkForAuth = checkForAuth;
         this.disableOCSP = disableOCSP;
         this.date = date;
+        this.provider = provider;
     }
-
+    
     public void validate(X509Certificate cert) throws CertPathValidatorException, CertificateException {
         List<Certificate> list = new ArrayList<>();
         
@@ -128,7 +132,15 @@ public class TrustyCertificateValidator {
                 }
             });
         
-            CertPathValidator.getInstance("PKIX").validate(CertificateFactory.getInstance("X.509").generateCertPath(list), params);
+            try {
+                if (provider != null) {
+                    CertPathValidator.getInstance("PKIX", provider).validate(CertificateFactory.getInstance("X.509", provider).generateCertPath(list), params);
+                } else {
+                    CertPathValidator.getInstance("PKIX").validate(CertificateFactory.getInstance("X.509").generateCertPath(list), params);
+                }
+            } catch (NoSuchProviderException e) {
+                throw new RuntimeException(e);
+            }
             
             if (checkForAuth && !TrustyKeyUsageChecker.getKeyUsage(cert).contains(TrustyKeyUsage.AUTHENTICATION)) {
                 throw new CertificateException("Certificate is not for auth");
@@ -170,6 +182,8 @@ public class TrustyCertificateValidator {
         private TrustyRepository repository;
         
         private Date date;
+        
+        private String provider;
         
         public Builder(TrustyOCSPValidator ocspValidator) {
             this.ocspValidator = ocspValidator;
@@ -219,8 +233,13 @@ public class TrustyCertificateValidator {
             return this;
         }
         
+        public Builder setProvider(String provider) {
+            this.provider = provider;
+            return this;
+        }
+        
         public TrustyCertificateValidator build() {
-            return new TrustyCertificateValidator(ocspValidator, repository, iin, bin, checkIsEnterprise, checkIsPersonal, checkForSigning, checkForAuth, disableOCSP, date);
+            return new TrustyCertificateValidator(ocspValidator, repository, iin, bin, checkIsEnterprise, checkIsPersonal, checkForSigning, checkForAuth, disableOCSP, date, provider);
         }
     }
 }

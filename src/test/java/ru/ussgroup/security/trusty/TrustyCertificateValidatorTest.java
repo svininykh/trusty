@@ -11,6 +11,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
 import ru.ussgroup.security.trusty.ocsp.TrustyCachedOCSPValidator;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
 import ru.ussgroup.security.trusty.ocsp.kalkan.KalkanOCSPValidator;
@@ -24,11 +25,11 @@ public class TrustyCertificateValidatorTest {
     public static void initValidator() {
         TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
         
-        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://beren.pki.kz/ocsp/", repository);
+        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://178.89.4.221/ocsp/", repository);
         
         TrustyCachedOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
         
-        validator = new TrustyCertificateValidator.Builder(cachedOCSPValidator).build();
+        validator = new TrustyCertificateValidator.Builder(cachedOCSPValidator).setProvider(KalkanProvider.PROVIDER_NAME).build();
     }
     
     @Test

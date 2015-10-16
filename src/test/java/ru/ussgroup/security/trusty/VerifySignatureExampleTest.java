@@ -10,6 +10,7 @@ import javax.security.auth.x500.X500PrivateCredential;
 
 import org.junit.Test;
 
+import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
 import ru.ussgroup.security.trusty.ocsp.TrustyCachedOCSPValidator;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
 import ru.ussgroup.security.trusty.ocsp.kalkan.KalkanOCSPValidator;
@@ -44,12 +45,13 @@ public class VerifySignatureExampleTest {
         
         TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
         
-        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://beren.pki.kz/ocsp/", repository);
+        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://178.89.4.221/ocsp/", repository);
         
         TrustyCachedOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
         
         TrustyCertificateValidator validator = new TrustyCertificateValidator.Builder(cachedOCSPValidator).checkIsEnterprise()
                                                                                                           .checkForSigning()
+                                                                                                          .setProvider(KalkanProvider.PROVIDER_NAME)
                                                                                                           .build();
         
         validator.validate(cert);
@@ -60,11 +62,12 @@ public class VerifySignatureExampleTest {
         
         TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
         
-        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://beren.pki.kz/ocsp/", repository);
+        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://178.89.4.221/ocsp/", repository);
         
         TrustyCachedOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
         
         TrustyCertificateValidator validator = new TrustyCertificateValidator.Builder(cachedOCSPValidator).setDate(cert.getNotBefore())
+                                                                                                          .setProvider(KalkanProvider.PROVIDER_NAME)
                                                                                                           .build();
         
         validator.validate(cert);

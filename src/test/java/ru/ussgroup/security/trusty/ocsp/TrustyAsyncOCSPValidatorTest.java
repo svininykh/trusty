@@ -25,7 +25,7 @@ public class TrustyAsyncOCSPValidatorTest {
         
         TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
         
-        TrustyOCSPValidator validator = new TrustyCachedOCSPValidator(new KalkanOCSPValidator("http://beren.pki.kz/ocsp/", repository), 5, 60);
+        TrustyOCSPValidator validator = new TrustyCachedOCSPValidator(new KalkanOCSPValidator("http://178.89.4.221/ocsp/", repository), 5, 60);
         
         Assert.assertEquals(OCSPStatusInfo.GOOD,    validator.validate(oldGostCert).getState());
         Assert.assertEquals(OCSPStatusInfo.GOOD,    validator.validate(newGostCert).getState());

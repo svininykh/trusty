@@ -83,7 +83,7 @@ public class KalkanOCSPValidator implements TrustyOCSPValidator {
     public KalkanOCSPValidator(String ocspUrl, TrustyRepository trustyRepository) {
         this.ocspUrl = ocspUrl;
         this.trustyRepository = trustyRepository;
-        validator = new TrustyCertificateValidator.Builder(this).disableOCSP().build();
+        validator = new TrustyCertificateValidator.Builder(this).disableOCSP().setProvider(KalkanProvider.PROVIDER_NAME).build();
         DnsResolver.addDomainName(ocspUrl);
     }
     
@@ -129,7 +129,7 @@ public class KalkanOCSPValidator implements TrustyOCSPValidator {
             
             X509Certificate ocspcert = brep.getCerts(KalkanProvider.PROVIDER_NAME)[0];
             
-//            validator.validate(ocspcert);//ошибка валидации: провайдер не поддерживает критическое расширение
+            validator.validate(ocspcert);//ошибка валидации: провайдер не поддерживает критическое расширение
             
             if (!brep.verify(ocspcert.getPublicKey(), KalkanProvider.PROVIDER_NAME)) {
                 throw new OCSPException("Unable to verify response");
