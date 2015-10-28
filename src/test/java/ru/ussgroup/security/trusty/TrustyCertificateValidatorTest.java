@@ -12,24 +12,17 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
-import ru.ussgroup.security.trusty.ocsp.TrustyCachedOCSPValidator;
-import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
-import ru.ussgroup.security.trusty.ocsp.kalkan.KalkanOCSPValidator;
 import ru.ussgroup.security.trusty.repository.TrustyKeyStoreRepository;
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
 
 public class TrustyCertificateValidatorTest {
-    private static TrustyCertificateValidator validator;
+    private static TrustyCertPathValidator validator;
     
     @BeforeClass
     public static void initValidator() {
         TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
         
-        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://178.89.4.221/ocsp/", repository);
-        
-        TrustyCachedOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
-        
-        validator = new TrustyCertificateValidator.Builder(cachedOCSPValidator).setProvider(KalkanProvider.PROVIDER_NAME).build();
+        validator = new TrustyCertPathValidator.Builder(repository).setProvider(KalkanProvider.PROVIDER_NAME).build();
     }
     
     @Test
@@ -87,11 +80,7 @@ public class TrustyCertificateValidatorTest {
         
         TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
         
-        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://beren.pki.kz/ocsp/", repository);
-        
-        TrustyCachedOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
-        
-        TrustyCertificateValidator validator = new TrustyCertificateValidator.Builder(cachedOCSPValidator).disableOCSP().build();
+        TrustyCertPathValidator validator = new TrustyCertPathValidator.Builder(repository).build();
         
         for (int i = 0; i < 1_00; i++) {
             Thread t = new Thread() {

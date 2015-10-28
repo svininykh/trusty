@@ -1,11 +1,13 @@
 package ru.ussgroup.security.trusty.ocsp;
 
 import java.security.cert.X509Certificate;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
 
 public interface TrustyOCSPValidator {
-    OCSPStatusInfo validate(X509Certificate cert) throws OCSPNotAvailableException;
+    CompletableFuture<TrustyOCSPValidationResult> validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException;
     
     TrustyRepository getRepository();
 }

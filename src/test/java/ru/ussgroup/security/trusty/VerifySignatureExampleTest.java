@@ -49,7 +49,7 @@ public class VerifySignatureExampleTest {
         
         TrustyCachedOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
         
-        TrustyCertificateValidator validator = new TrustyCertificateValidator.Builder(cachedOCSPValidator).checkIsEnterprise()
+        TrustyCertPathValidator validator = new TrustyCertPathValidator.Builder(cachedOCSPValidator).checkIsEnterprise()
                                                                                                           .checkForSigning()
                                                                                                           .setProvider(KalkanProvider.PROVIDER_NAME)
                                                                                                           .build();
@@ -66,7 +66,7 @@ public class VerifySignatureExampleTest {
         
         TrustyCachedOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
         
-        TrustyCertificateValidator validator = new TrustyCertificateValidator.Builder(cachedOCSPValidator).setDate(cert.getNotBefore())
+        TrustyCertPathValidator validator = new TrustyCertPathValidator.Builder(cachedOCSPValidator).setDate(cert.getNotBefore())
                                                                                                           .setProvider(KalkanProvider.PROVIDER_NAME)
                                                                                                           .build();
         

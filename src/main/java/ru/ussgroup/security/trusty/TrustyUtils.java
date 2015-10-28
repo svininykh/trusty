@@ -15,11 +15,14 @@ import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.security.auth.x500.X500PrivateCredential;
 
 import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
+import ru.ussgroup.security.trusty.repository.TrustyRepository;
 
 /*
  * getExtendedKeyUsage
@@ -58,6 +61,36 @@ public class TrustyUtils {
         if (!exists) {
             Security.addProvider(new KalkanProvider());
         }
+    }
+    
+    public static List<X509Certificate> getCertPath(X509Certificate cert, TrustyRepository repository) {
+        List<X509Certificate> list = new ArrayList<>();
+        
+        list.add(cert);
+        
+        X509Certificate current = cert;
+        
+        while (true) {        
+            X509Certificate x509IntermediateCert = repository.getIntermediateCert(current);
+            
+            if (x509IntermediateCert != null) {
+                list.add(x509IntermediateCert);
+                
+                current = x509IntermediateCert;
+            } else {
+                break;
+            }
+        }
+        
+        return list;
+    }
+    
+    public static List<X509Certificate> getFullCertPath(X509Certificate cert, TrustyRepository repository) {
+        List<X509Certificate> list = getCertPath(cert, repository);
+        
+        list.add(repository.getTrustedCert(list.get(list.size() - 1)));
+        
+        return list;
     }
     
     public static void verifySignature(byte[] data, byte[] signature, PublicKey publicKey) throws SignatureException, CertPathValidatorException, CertificateException {
