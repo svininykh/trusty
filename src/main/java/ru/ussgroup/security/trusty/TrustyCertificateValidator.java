@@ -11,21 +11,23 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import ru.ussgroup.security.trusty.ocsp.TrustyOCSPNotAvailableException;
-import ru.ussgroup.security.trusty.ocsp.TrustyOCSPStatusInfo;
+import ru.ussgroup.security.trusty.ocsp.TrustyOCSPStatus;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
 
+/**
+ * This class is thread-safe 
+ */
 public class TrustyCertificateValidator {
-    private TrustyAsyncCertPathValidator certPathValidator;
+    private TrustyCertPathValidator certPathValidator;
     
     private TrustyOCSPValidator ocspValidator;
 
-    public TrustyCertificateValidator(TrustyAsyncCertPathValidator certPathValidator, TrustyOCSPValidator ocspValidator) {
+    public TrustyCertificateValidator(TrustyCertPathValidator certPathValidator, TrustyOCSPValidator ocspValidator) {
         this.certPathValidator = certPathValidator;
         this.ocspValidator = ocspValidator;
     }
 
-    public CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException {
+    public CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> validate(Set<X509Certificate> certs) {
         Set<X509Certificate> fullList = new HashSet<>();
         
         Map<BigInteger, List<X509Certificate>> serial2Path = new HashMap<>();
@@ -40,7 +42,7 @@ public class TrustyCertificateValidator {
         
         CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> ocspFuture = ocspValidator.validate(fullList).thenApply(result -> {
             return result.getStatuses().entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
-                return e.getValue().getState() == TrustyOCSPStatusInfo.GOOD ? TrustyCertValidationCode.SUCCESS : TrustyCertValidationCode.OCSP_FAILED;
+                return e.getValue().getStatus() == TrustyOCSPStatus.GOOD ? TrustyCertValidationCode.SUCCESS : TrustyCertValidationCode.OCSP_FAILED;
             }));
         });
         

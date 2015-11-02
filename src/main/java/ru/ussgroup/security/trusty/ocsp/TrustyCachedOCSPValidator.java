@@ -21,9 +21,9 @@ import ru.ussgroup.security.trusty.repository.TrustyRepository;
  * This class is thread-safe
  */
 public class TrustyCachedOCSPValidator implements TrustyOCSPValidator {
-    private final Cache<BigInteger, TrustyOCSPStatusInfo> certificateStatusCache;
+    private final Cache<BigInteger, TrustyOCSPStatus> certificateStatusCache;
     
-    private final Cache<BigInteger, TrustyOCSPStatusInfo> trustedCertificateStatusCache;
+    private final Cache<BigInteger, TrustyOCSPStatus> trustedCertificateStatusCache;
     
     private final TrustyOCSPValidator validator;
     
@@ -39,8 +39,8 @@ public class TrustyCachedOCSPValidator implements TrustyOCSPValidator {
     }
     
     @Override
-    public CompletableFuture<TrustyOCSPValidationResult> validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException {
-        Map<BigInteger, TrustyOCSPStatusInfo> statuses = new HashMap<>();
+    public CompletableFuture<TrustyOCSPValidationResult> validate(Set<X509Certificate> certs) {
+        Map<BigInteger, TrustyOCSPStatus> statuses = new HashMap<>();
         
         Set<X509Certificate> toProcess = new HashSet<>(certs);
         
@@ -49,7 +49,7 @@ public class TrustyCachedOCSPValidator implements TrustyOCSPValidator {
         while (it.hasNext()) {
             X509Certificate checkedCert = it.next();
             
-            TrustyOCSPStatusInfo status = trustedCertificateStatusCache.getIfPresent(checkedCert.getSerialNumber());
+            TrustyOCSPStatus status = trustedCertificateStatusCache.getIfPresent(checkedCert.getSerialNumber());
             
             if (status == null) status = certificateStatusCache.getIfPresent(checkedCert.getSerialNumber());
             
@@ -64,12 +64,12 @@ public class TrustyCachedOCSPValidator implements TrustyOCSPValidator {
             
             trustedAndIntermediateCerts.addAll(validator.getRepository().getIntermediateCerts());
             
-            Map<BigInteger, TrustyOCSPStatusInfo> freshStatuses = validationResult.getStatuses();
+            Map<BigInteger, TrustyOCSPStatus> freshStatuses = validationResult.getStatuses();
             
             for (X509Certificate checkedCert : toProcess) {
-                TrustyOCSPStatusInfo status = freshStatuses.get(checkedCert.getSerialNumber());
+                TrustyOCSPStatus status = freshStatuses.get(checkedCert.getSerialNumber());
                 
-                Cache<BigInteger, TrustyOCSPStatusInfo> cache = certificateStatusCache;
+                Cache<BigInteger, TrustyOCSPStatus> cache = certificateStatusCache;
                 
                 for (X509Certificate trustedCert : trustedAndIntermediateCerts) {
                     if (trustedCert.getSerialNumber().equals(checkedCert.getSerialNumber())) {

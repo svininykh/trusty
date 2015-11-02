@@ -22,7 +22,7 @@
     <dependency>
       <groupId>kz.gov.pki</groupId>
       <artifactId>kalkan</artifactId>
-      <version>26.03.2015</version>
+      <version>12.10.2015</version>
     </dependency>
     
     <dependency>
@@ -92,8 +92,12 @@
   
   <repositories>
     <repository>
-        <id>ru.uss-group</id>
-        <url>https://raw.githubusercontent.com/man4j/trusty/master/maven</url>
+      <id>ru.uss-group</id>
+      <url>https://raw.githubusercontent.com/man4j/trusty/master/maven</url>
     </repository>
+    <repository>
+      <id>ru.uss-group.new</id>
+      <url>https://github.com/man4j/trusty/blob/master/maven</url>
+      </repository>
   </repositories>
 </project>

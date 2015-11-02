@@ -7,12 +7,9 @@ import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
-import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.cert.CertPathValidatorException;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -91,21 +88,6 @@ public class TrustyUtils {
         list.add(repository.getTrustedCert(list.get(list.size() - 1)));
         
         return list;
-    }
-    
-    public static void verifySignature(byte[] data, byte[] signature, PublicKey publicKey) throws SignatureException, CertPathValidatorException, CertificateException {
-        try {
-            Signature s = Signature.getInstance(publicKey.getAlgorithm());
-            
-            s.initVerify(publicKey);
-            s.update(data);
-            
-            if (!s.verify(signature)) {
-                throw new SignatureException("Signature is not valid");
-            }
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            throw new RuntimeException(e);
-        }
     }
     
     public static byte[] sign(byte[] data, PrivateKey privateKey) throws SignatureException {

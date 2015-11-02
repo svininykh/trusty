@@ -1,5 +1,6 @@
 package ru.ussgroup.security.trusty;
 
+import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -11,6 +12,9 @@ import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
@@ -41,6 +45,20 @@ public class TrustyCertPathValidator {
         this.provider = provider;
     }
     
+    public CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> validate(Set<X509Certificate> certs) {
+        return CompletableFuture.supplyAsync(() -> {
+            return certs.parallelStream().collect(Collectors.toConcurrentMap(X509Certificate::getSerialNumber, c -> {
+                try {
+                    validate(c);
+                    
+                    return TrustyCertValidationCode.SUCCESS;
+                } catch (Exception e) {
+                    return TrustyCertValidationCode.CERT_PATH_FAILED;
+                }
+            }));
+        });
+    }
+        
     public void validate(X509Certificate cert) throws CertPathValidatorException, CertificateException {
         try {
             PKIXBuilderParameters params = new PKIXBuilderParameters(repository.getTrustedCerts().stream().map(c -> new TrustAnchor(c, null)).collect(Collectors.toSet()), null);

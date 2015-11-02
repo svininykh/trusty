@@ -9,10 +9,13 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 
 import kz.gov.pki.kalkan.asn1.ASN1EncodableVector;
@@ -32,7 +35,6 @@ import kz.gov.pki.kalkan.ocsp.OCSPResp;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPNotAvailableException;
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
 import ru.ussgroup.security.trusty.utils.DnsResolver;
-import ru.ussgroup.security.trusty.utils.FutureUtils;
 
 /**
  * This class is thread-safe
@@ -80,7 +82,7 @@ public class KalkanOCSPRequestSender {
         DnsResolver.addDomainName(ocspUrl);
     }
     
-    public KalkanOCSPResponse sendRequest(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException {
+    public KalkanOCSPResponse sendRequest(Set<X509Certificate> certs) {
         try {
             byte[] nonce = new byte[4];
             sr.nextBytes(nonce);
@@ -91,16 +93,28 @@ public class KalkanOCSPRequestSender {
                 ids.add(new CertificateID(CertificateID.HASH_GOST34311GT, trustyRepository.getIssuer(cert), cert.getSerialNumber(), KalkanProvider.PROVIDER_NAME));
             }
             
-            return new KalkanOCSPResponse(nonce, FutureUtils.toCompletable(httpClient.preparePost(ocspUrl)
-                                                            .setHeader("Content-Type", "application/ocsp-request")
-                                                            .setInetAddress(DnsResolver.getInetAddress(ocspUrl))
-                                                            .setBody(getOcspPackage(ids, nonce))
-                                                            .execute(new AsyncCompletionHandler<OCSPResp>() {
-                                                                @Override
-                                                                public OCSPResp onCompleted(Response response) throws Exception {
-                                                                    return new OCSPResp(response.getResponseBodyAsBytes());
-                                                                }
-                                                             })));
+            ListenableFuture<OCSPResp> f = httpClient.preparePost(ocspUrl)
+                                                     .setHeader("Content-Type", "application/ocsp-request")
+                                                     .setInetAddress(DnsResolver.getInetAddress(ocspUrl))
+                                                     .setBody(getOcspPackage(ids, nonce))
+                                                     .execute(new AsyncCompletionHandler<OCSPResp>() {
+                                                         @Override
+                                                         public OCSPResp onCompleted(Response response) throws Exception {
+                                                             return new OCSPResp(response.getResponseBodyAsBytes());
+                                                         }
+                                                     });
+            
+            CompletableFuture<OCSPResp> completableFuture = new CompletableFuture<>();
+            
+            f.addListener(() -> {
+                try {
+                    completableFuture.complete(f.get());
+                } catch (InterruptedException | ExecutionException e) {
+                    completableFuture.completeExceptionally(new TrustyOCSPNotAvailableException(e));
+                }
+            }, r -> {r.run();});
+            
+            return new KalkanOCSPResponse(nonce, completableFuture);
         } catch (OCSPException | IOException e) {
             throw new RuntimeException(e);
         }

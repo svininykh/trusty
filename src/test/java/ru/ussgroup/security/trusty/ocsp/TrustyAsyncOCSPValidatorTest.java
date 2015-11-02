@@ -5,6 +5,8 @@ import java.security.cert.X509Certificate;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableSet;
+
 import ru.ussgroup.security.trusty.TrustyUtils;
 import ru.ussgroup.security.trusty.ocsp.kalkan.KalkanOCSPValidator;
 import ru.ussgroup.security.trusty.repository.TrustyKeyStoreRepository;
@@ -22,12 +24,12 @@ public class TrustyAsyncOCSPValidatorTest {
         
         TrustyOCSPValidator validator = new TrustyCachedOCSPValidator(new KalkanOCSPValidator("http://ocsp.pki.gov.kz/ocsp/", repository), 5, 60);
         
-        TrustyOCSPValidationResult result = validator.validate(oldGostCert, oldRsaCert, oldRsaExpiredCert, oldRsaRevokedCert)
+        TrustyOCSPValidationResult result = validator.validate(ImmutableSet.of(oldGostCert, oldRsaCert, oldRsaExpiredCert, oldRsaRevokedCert))
                                                      .get();
 
-        Assert.assertEquals(TrustyOCSPStatusInfo.GOOD,    result.getStatuses().get(oldGostCert.getSerialNumber()).getState());
-        Assert.assertEquals(TrustyOCSPStatusInfo.GOOD,    result.getStatuses().get(oldRsaCert.getSerialNumber()).getState());
-        Assert.assertEquals(TrustyOCSPStatusInfo.GOOD,    result.getStatuses().get(oldRsaExpiredCert.getSerialNumber()).getState());
-        Assert.assertEquals(TrustyOCSPStatusInfo.REVOKED, result.getStatuses().get(oldRsaRevokedCert.getSerialNumber()).getState());
+        Assert.assertEquals(TrustyOCSPStatus.GOOD,    result.getStatuses().get(oldGostCert.getSerialNumber()).getStatus());
+        Assert.assertEquals(TrustyOCSPStatus.GOOD,    result.getStatuses().get(oldRsaCert.getSerialNumber()).getStatus());
+        Assert.assertEquals(TrustyOCSPStatus.GOOD,    result.getStatuses().get(oldRsaExpiredCert.getSerialNumber()).getStatus());
+        Assert.assertEquals(TrustyOCSPStatus.REVOKED, result.getStatuses().get(oldRsaRevokedCert.getSerialNumber()).getStatus());
     }
 }

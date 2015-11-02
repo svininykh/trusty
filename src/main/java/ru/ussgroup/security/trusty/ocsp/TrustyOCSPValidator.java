@@ -7,7 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
 
 public interface TrustyOCSPValidator {
-    CompletableFuture<TrustyOCSPValidationResult> validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException;
+    CompletableFuture<TrustyOCSPValidationResult> validate(Set<X509Certificate> certs);
     
     TrustyRepository getRepository();
 }
