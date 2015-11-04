@@ -6,6 +6,7 @@ import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.security.auth.x500.X500PrivateCredential;
 
@@ -40,7 +41,7 @@ public class VerifySignatureExampleTest {
     }
     
     @Test
-    public void shouldVerifySignature() throws SignatureException, CertPathValidatorException, CertificateException {
+    public void shouldVerifySignature() throws SignatureException, CertPathValidatorException, CertificateException, InterruptedException, ExecutionException {
         X500PrivateCredential cert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_1.0.p12", "123456");
         
         byte[] data = "Привет!".getBytes(StandardCharsets.UTF_8);
@@ -48,7 +49,7 @@ public class VerifySignatureExampleTest {
         byte[] signature = TrustyUtils.sign(data, cert.getPrivateKey());
         
         List<SignedData> results = signatureVerifier.verify(Arrays.asList(new SignedData(data, signature, cert.getCertificate()),
-                                                                          new SignedData("qwe".getBytes(StandardCharsets.UTF_8), signature, cert.getCertificate())));
+                                                                          new SignedData("qwe".getBytes(StandardCharsets.UTF_8), signature, cert.getCertificate()))).get();
         
         Assert.assertTrue(results.get(0).isValid());
         Assert.assertFalse(results.get(1).isValid());

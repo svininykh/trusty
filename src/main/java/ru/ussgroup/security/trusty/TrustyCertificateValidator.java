@@ -9,9 +9,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPStatus;
+import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidationResult;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
 
 /**
@@ -40,11 +40,7 @@ public class TrustyCertificateValidator {
             serial2Path.put(cert.getSerialNumber(), fullCertPath);
         }
         
-        CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> ocspFuture = ocspValidator.validate(fullList).thenApply(result -> {
-            return result.getStatuses().entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
-                return e.getValue().getStatus() == TrustyOCSPStatus.GOOD ? TrustyCertValidationCode.SUCCESS : TrustyCertValidationCode.OCSP_FAILED;
-            }));
-        });
+        CompletableFuture<Map<BigInteger, TrustyOCSPStatus>> ocspFuture = ocspValidator.validate(fullList).thenApply(TrustyOCSPValidationResult::getStatuses);
         
         CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> certPathFuture = certPathValidator.validate(certs);
         
@@ -52,7 +48,7 @@ public class TrustyCertificateValidator {
             for (Entry<BigInteger, TrustyCertValidationCode> e : certPathRes.entrySet()) {
                 if (e.getValue() == TrustyCertValidationCode.SUCCESS) {
                     for (X509Certificate cert : serial2Path.get(e.getKey())) {
-                        if (ocspRes.get(cert.getSerialNumber()) != TrustyCertValidationCode.SUCCESS) {//какой-то сертификат из цепочки не прошел проверку OCSP
+                        if (ocspRes.get(cert.getSerialNumber()).getStatus() != TrustyOCSPStatus.GOOD) {//какой-то сертификат из цепочки не прошел проверку OCSP
                             e.setValue(TrustyCertValidationCode.OCSP_FAILED);
                             break;
                         }
