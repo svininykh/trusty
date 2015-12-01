@@ -22,46 +22,85 @@ package ru.ussgroup.security.trusty;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
-import java.security.cert.CertPathValidatorException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.security.auth.x500.X500PrivateCredential;
 
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
+import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPCertPathValidatorException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPCertificateException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPNonceException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPNotAvailableException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPUnknownProblemException;
 import ru.ussgroup.security.trusty.ocsp.TrustyCachedOCSPValidator;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
 import ru.ussgroup.security.trusty.ocsp.kalkan.KalkanOCSPValidator;
 import ru.ussgroup.security.trusty.repository.TrustyKeyStoreRepository;
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
+import ru.ussgroup.security.trusty.utils.SignedData;
 
 public class VerifySignatureExampleTest {
+    private TrustySignatureVerifier signatureVerifier;
+    
+    @Before
+    public void init() {
+        TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
+        
+        TrustyCertPathValidator certPathValidator = new TrustyCertPathValidator(repository, KalkanProvider.PROVIDER_NAME);
+        
+        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://ocsp.pki.gov.kz/ocsp/", repository);
+        
+        TrustyOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
+        
+        TrustyCertificateValidator certificateValidator = new TrustyCertificateValidator(certPathValidator, cachedOCSPValidator);
+        
+        signatureVerifier = new TrustySignatureVerifier(certificateValidator);
+    }
+    
     @Test
-    public void shouldVerifySignature() throws SignatureException, CertPathValidatorException, CertificateException {
-        X500PrivateCredential newGostCert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_2.0.p12", "123456");
+    public void shouldVerifySignature() throws InterruptedException, ExecutionException {
+        X500PrivateCredential cert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_1.0.p12", "123456");
         
         byte[] data = "Привет!".getBytes(StandardCharsets.UTF_8);
         
-        byte[] signature = TrustyUtils.sign(data, newGostCert.getPrivateKey());
+        byte[] signature;
+        try {
+            signature = TrustyUtils.sign(data, cert.getPrivateKey());
+        } catch (SignatureException e) {
+            throw new RuntimeException(e);
+        }
         
-        verifySignature(data, signature, newGostCert.getCertificate());
+        List<SignedData> results = signatureVerifier.verifyAsync(Arrays.asList(new SignedData(data, signature, cert.getCertificate()),
+                                                                               new SignedData("qwe".getBytes(StandardCharsets.UTF_8), signature, cert.getCertificate()))).get();
+        
+        Assert.assertTrue(results.get(0).isValid());
+        Assert.assertFalse(results.get(1).isValid());
     }
     
-    private void verifySignature(byte[] data, byte[] signature, X509Certificate cert) throws SignatureException, CertPathValidatorException, CertificateException {
-        TrustyUtils.verifySignature(data, signature, cert.getPublicKey());
+    @Test
+    public void shouldSyncVerifySignature() throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+        X500PrivateCredential cert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_1.0.p12", "123456");
         
-        TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
+        byte[] data = "Привет!".getBytes(StandardCharsets.UTF_8);
         
-        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://beren.pki.kz/ocsp/", repository);
+        byte[] signature;
+        try {
+            signature = TrustyUtils.sign(data, cert.getPrivateKey());
+        } catch (SignatureException e) {
+            throw new RuntimeException(e);
+        }
         
-        TrustyCachedOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
+        List<SignedData> results = signatureVerifier.verify(Arrays.asList(new SignedData(data, signature, cert.getCertificate()),
+                                                                          new SignedData("qwe".getBytes(StandardCharsets.UTF_8), signature, cert.getCertificate())));
         
-        TrustyCertificateValidator validator = new TrustyCertificateValidator.Builder(cachedOCSPValidator).checkIsEnterprise()
-                                                                                                          .checkForSigning()
-                                                                                                          .build();
-        
-        validator.validate(cert);
+        Assert.assertTrue(results.get(0).isValid());
+        Assert.assertFalse(results.get(1).isValid());
     }
 }
 
