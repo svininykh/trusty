@@ -22,7 +22,7 @@ public class TrustyCertificateValidatorTest {
     public static void initValidator() {
         TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
         
-        validator = new TrustyCertPathValidator.Builder(repository).setProvider(KalkanProvider.PROVIDER_NAME).build();
+        validator = new TrustyCertPathValidator(repository, KalkanProvider.PROVIDER_NAME);
     }
     
     @Test
@@ -80,7 +80,7 @@ public class TrustyCertificateValidatorTest {
         
         TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
         
-        TrustyCertPathValidator validator = new TrustyCertPathValidator.Builder(repository).build();
+        TrustyCertPathValidator validator = new TrustyCertPathValidator(repository, KalkanProvider.PROVIDER_NAME);
         
         for (int i = 0; i < 1_00; i++) {
             Thread t = new Thread() {

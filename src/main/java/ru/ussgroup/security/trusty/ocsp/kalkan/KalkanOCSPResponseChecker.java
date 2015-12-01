@@ -23,7 +23,10 @@ import kz.gov.pki.kalkan.ocsp.OCSPResp;
 import kz.gov.pki.kalkan.ocsp.RevokedStatus;
 import kz.gov.pki.kalkan.ocsp.SingleResp;
 import ru.ussgroup.security.trusty.TrustyCertPathValidator;
-import ru.ussgroup.security.trusty.ocsp.TrustyOCSPNonceException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPCertPathValidatorException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPCertificateException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPNonceException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPUnknownProblemException;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPStatus;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidationResult;
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
@@ -49,82 +52,92 @@ public class KalkanOCSPResponseChecker {
     }
     
     public KalkanOCSPResponseChecker(TrustyRepository trustyRepository) {
-        validator = new TrustyCertPathValidator.Builder(trustyRepository).setProvider(KalkanProvider.PROVIDER_NAME).build();
+        validator = new TrustyCertPathValidator(trustyRepository, KalkanProvider.PROVIDER_NAME);
     }
 
-    public TrustyOCSPValidationResult checkResponse(OCSPResp response, byte[] nonce) throws CertPathValidatorException, CertificateException, TrustyOCSPNonceException {
-        if (response.getStatus() != 0) {
-            throw new RuntimeException("Unsuccessful request. Status: " + response.getStatus());
-        }
-        
-        BasicOCSPResp brep;
-        
+    public TrustyOCSPValidationResult checkResponse(OCSPResp response, byte[] nonce) throws TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPNonceException, TrustyOCSPUnknownProblemException {
         try {
-            brep = (BasicOCSPResp) response.getResponseObject();
-        } catch (OCSPException e) {
-            throw new RuntimeException("Unsuccessful request.", e);
-        }
-        
-        byte[] respNonceExt = brep.getExtensionValue(OCSPObjectIdentifiers.id_pkix_ocsp_nonce.getId());
-        
-        if (respNonceExt != null) {
-            try (ASN1InputStream asn1In1 = new ASN1InputStream(respNonceExt)) {
-                DERObject derObj = asn1In1.readObject();
-                
-                byte[] extV = DEROctetString.getInstance(derObj).getOctets();
-                
-                try(ASN1InputStream asn1In2 = new ASN1InputStream(extV)) {
-                    derObj = asn1In2.readObject();
-                    byte[] receivedNonce = DEROctetString.getInstance(derObj).getOctets();
-                    if (!java.util.Arrays.equals(nonce, receivedNonce)) {
-                        throw new TrustyOCSPNonceException("Expected nonce: " + Base64.getEncoder().encode(nonce) + ", but received: " + Base64.getEncoder().encode(receivedNonce));
+            if (response.getStatus() != 0) {
+                throw new RuntimeException("Unsuccessful request. Status: " + response.getStatus());
+            }
+            
+            BasicOCSPResp brep;
+            
+            try {
+                brep = (BasicOCSPResp) response.getResponseObject();
+            } catch (OCSPException e) {
+                throw new RuntimeException("Unsuccessful request.", e);
+            }
+            
+            byte[] respNonceExt = brep.getExtensionValue(OCSPObjectIdentifiers.id_pkix_ocsp_nonce.getId());
+            
+            if (respNonceExt != null) {
+                try (ASN1InputStream asn1In1 = new ASN1InputStream(respNonceExt)) {
+                    DERObject derObj = asn1In1.readObject();
+                    
+                    byte[] extV = DEROctetString.getInstance(derObj).getOctets();
+                    
+                    try(ASN1InputStream asn1In2 = new ASN1InputStream(extV)) {
+                        derObj = asn1In2.readObject();
+                        byte[] receivedNonce = DEROctetString.getInstance(derObj).getOctets();
+                        if (!java.util.Arrays.equals(nonce, receivedNonce)) {
+                            throw new TrustyOCSPNonceException("Expected nonce: " + Base64.getEncoder().encode(nonce) + ", but received: " + Base64.getEncoder().encode(receivedNonce));
+                        }
                     }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (IOException e) {
+            } else {
+                throw new TrustyOCSPNonceException("Nonce extension not found in response!");
+            }
+            
+            X509Certificate ocspcert;
+            
+            try {
+                ocspcert = brep.getCerts(KalkanProvider.PROVIDER_NAME)[0];
+            } catch (NoSuchProviderException | OCSPException e) {
                 throw new RuntimeException(e);
             }
-        } else {
-            throw new TrustyOCSPNonceException("Nonce extension not found in response!");
-        }
-        
-        X509Certificate ocspcert;
-        
-        try {
-            ocspcert = brep.getCerts(KalkanProvider.PROVIDER_NAME)[0];
-        } catch (NoSuchProviderException | OCSPException e) {
-            throw new RuntimeException(e);
-        }
-        
-        validator.validate(ocspcert);
-        
-        try {
-            if (!brep.verify(ocspcert.getPublicKey(), KalkanProvider.PROVIDER_NAME)) {
-                throw new RuntimeException("Unable to verify response");
+            
+            try {
+                validator.validate(ocspcert);
+            } catch (CertPathValidatorException e1) {
+                throw new TrustyOCSPCertPathValidatorException(e1);
+            } catch (CertificateException e1) {
+                throw new TrustyOCSPCertificateException(e1);
             }
-        } catch (NoSuchProviderException | OCSPException e) {
-            throw new RuntimeException(e);
-        }
-        
-        Map<BigInteger, TrustyOCSPStatus> statuses = new HashMap<>();
-        
-        for (SingleResp singleResp : brep.getResponses()) {
-            Object status = singleResp.getCertStatus();
-    
-            if (status == null) {
-                statuses.put(singleResp.getCertID().getSerialNumber(), new TrustyOCSPStatus(TrustyOCSPStatus.GOOD));
-            } else if (status instanceof RevokedStatus) {
-                int reason = 0;
-    
-                if (((RevokedStatus) status).hasRevocationReason()) {
-                    reason = ((RevokedStatus) status).getRevocationReason();
+            
+            try {
+                if (!brep.verify(ocspcert.getPublicKey(), KalkanProvider.PROVIDER_NAME)) {
+                    throw new RuntimeException("Unable to verify response");
                 }
-    
-                statuses.put(singleResp.getCertID().getSerialNumber(), new TrustyOCSPStatus(TrustyOCSPStatus.REVOKED, ((RevokedStatus) status).getRevocationTime(), reason));
-            } else {
-                statuses.put(singleResp.getCertID().getSerialNumber(), new TrustyOCSPStatus(TrustyOCSPStatus.UNKNOWN));
+            } catch (NoSuchProviderException | OCSPException e) {
+                throw new RuntimeException(e);
             }
-        }
+            
+            Map<BigInteger, TrustyOCSPStatus> statuses = new HashMap<>();
+            
+            for (SingleResp singleResp : brep.getResponses()) {
+                Object status = singleResp.getCertStatus();
         
-        return new TrustyOCSPValidationResult(response, statuses);
+                if (status == null) {
+                    statuses.put(singleResp.getCertID().getSerialNumber(), new TrustyOCSPStatus(TrustyOCSPStatus.GOOD));
+                } else if (status instanceof RevokedStatus) {
+                    int reason = 0;
+        
+                    if (((RevokedStatus) status).hasRevocationReason()) {
+                        reason = ((RevokedStatus) status).getRevocationReason();
+                    }
+        
+                    statuses.put(singleResp.getCertID().getSerialNumber(), new TrustyOCSPStatus(TrustyOCSPStatus.REVOKED, ((RevokedStatus) status).getRevocationTime(), reason));
+                } else {
+                    statuses.put(singleResp.getCertID().getSerialNumber(), new TrustyOCSPStatus(TrustyOCSPStatus.UNKNOWN));
+                }
+            }
+            
+            return new TrustyOCSPValidationResult(response, statuses);
+        } catch (RuntimeException e) {
+            throw new TrustyOCSPUnknownProblemException(e);
+        }
     }
 }

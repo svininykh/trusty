@@ -15,7 +15,13 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import ru.ussgroup.security.trusty.exception.TrustyOCSPCertPathValidatorException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPCertificateException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPNonceException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPNotAvailableException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPUnknownProblemException;
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
+import ru.ussgroup.security.trusty.utils.ExceptionHandler;
 
 /**
  * This class is thread-safe
@@ -39,7 +45,7 @@ public class TrustyCachedOCSPValidator implements TrustyOCSPValidator {
     }
     
     @Override
-    public CompletableFuture<TrustyOCSPValidationResult> validate(Set<X509Certificate> certs) {
+    public CompletableFuture<TrustyOCSPValidationResult> validateAsync(Set<X509Certificate> certs) {
         Map<BigInteger, TrustyOCSPStatus> statuses = new HashMap<>();
         
         Set<X509Certificate> toProcess = new HashSet<>(certs);
@@ -59,7 +65,7 @@ public class TrustyCachedOCSPValidator implements TrustyOCSPValidator {
             }
         }
         
-        return validator.validate(toProcess).thenApply(validationResult -> {
+        return validator.validateAsync(toProcess).thenApply(validationResult -> {
             List<X509Certificate> trustedAndIntermediateCerts = new ArrayList<>(validator.getRepository().getTrustedCerts());
             
             trustedAndIntermediateCerts.addAll(validator.getRepository().getIntermediateCerts());
@@ -88,6 +94,11 @@ public class TrustyCachedOCSPValidator implements TrustyOCSPValidator {
         });
     }
 
+    @Override
+    public TrustyOCSPValidationResult validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+        return ExceptionHandler.handleFutureResult(validateAsync(certs));
+    }
+    
     @Override
     public TrustyRepository getRepository() {
         return validator.getRepository();

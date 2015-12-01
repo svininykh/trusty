@@ -1,8 +1,11 @@
 package ru.ussgroup.security.trusty;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -10,9 +13,12 @@ import java.security.Provider;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -90,6 +96,10 @@ public class TrustyUtils {
         return list;
     }
     
+    public static String sign(String data, PrivateKey privateKey) throws SignatureException {
+        return Base64.getEncoder().encodeToString(sign(data.getBytes(StandardCharsets.UTF_8), privateKey));
+    }
+    
     public static byte[] sign(byte[] data, PrivateKey privateKey) throws SignatureException {
         try {
             Signature signature = Signature.getInstance(privateKey.getAlgorithm());
@@ -141,6 +151,22 @@ public class TrustyUtils {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    public static String toBase64(X509Certificate certificate) throws CertificateEncodingException {
+        return new String(Base64.getEncoder().encode(certificate.getEncoded()));
+    }
+
+    public static String toBase64(Key key) {
+        return new String(Base64.getEncoder().encode(key.getEncoded()));
+    }
+    
+    public static X509Certificate loadFromString(String base64Encoded) throws CertificateException {
+        X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(base64Encoded)));
+
+        if (cert == null) throw new CertificateException();
+
+        return cert;
     }
 
     private static X500PrivateCredential loadCredentialFromStream(String password, KeyStore keyStore, InputStream in) {

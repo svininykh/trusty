@@ -3,12 +3,9 @@ package ru.ussgroup.security.trusty;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import javax.security.auth.x500.X500PrivateCredential;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -25,7 +22,7 @@ import ru.ussgroup.security.trusty.repository.TrustyKeyStoreRepository;
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
 import ru.ussgroup.security.trusty.utils.SignedData;
 
-public class VerifySignatureExampleTest {
+public class SyncVerifySignatureExampleTest {
     private TrustySignatureVerifier signatureVerifier;
     
     @Before
@@ -34,7 +31,7 @@ public class VerifySignatureExampleTest {
         
         TrustyCertPathValidator certPathValidator = new TrustyCertPathValidator(repository, KalkanProvider.PROVIDER_NAME);
         
-        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://ocsp.pki.gov.kz/ocsp/", repository);
+        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://1.1.1.1", repository);
         
         TrustyOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
         
@@ -43,27 +40,7 @@ public class VerifySignatureExampleTest {
         signatureVerifier = new TrustySignatureVerifier(certificateValidator);
     }
     
-    @Test
-    public void shouldVerifySignature() throws InterruptedException, ExecutionException {
-        X500PrivateCredential cert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_1.0.p12", "123456");
-        
-        byte[] data = "Привет!".getBytes(StandardCharsets.UTF_8);
-        
-        byte[] signature;
-        try {
-            signature = TrustyUtils.sign(data, cert.getPrivateKey());
-        } catch (SignatureException e) {
-            throw new RuntimeException(e);
-        }
-        
-        List<SignedData> results = signatureVerifier.verifyAsync(Arrays.asList(new SignedData(data, signature, cert.getCertificate()),
-                                                                               new SignedData("qwe".getBytes(StandardCharsets.UTF_8), signature, cert.getCertificate()))).get();
-        
-        Assert.assertTrue(results.get(0).isValid());
-        Assert.assertFalse(results.get(1).isValid());
-    }
-    
-    @Test
+    @Test(expected = TrustyOCSPNotAvailableException.class)
     public void shouldSyncVerifySignature() throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
         X500PrivateCredential cert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_1.0.p12", "123456");
         
@@ -76,10 +53,8 @@ public class VerifySignatureExampleTest {
             throw new RuntimeException(e);
         }
         
-        List<SignedData> results = signatureVerifier.verify(Arrays.asList(new SignedData(data, signature, cert.getCertificate()),
-                                                                          new SignedData("qwe".getBytes(StandardCharsets.UTF_8), signature, cert.getCertificate())));
-        
-        Assert.assertTrue(results.get(0).isValid());
-        Assert.assertFalse(results.get(1).isValid());
+        signatureVerifier.verify(Arrays.asList(new SignedData(data, signature, cert.getCertificate()),
+                                               new SignedData("qwe".getBytes(StandardCharsets.UTF_8), signature, cert.getCertificate())));
     }
 }
+

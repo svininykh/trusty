@@ -2,6 +2,7 @@ package ru.ussgroup.security.trusty;
 
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -10,9 +11,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import ru.ussgroup.security.trusty.exception.TrustyOCSPCertPathValidatorException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPCertificateException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPNonceException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPNotAvailableException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPUnknownProblemException;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPStatus;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidationResult;
 import ru.ussgroup.security.trusty.ocsp.TrustyOCSPValidator;
+import ru.ussgroup.security.trusty.utils.ExceptionHandler;
 
 /**
  * This class is thread-safe 
@@ -26,8 +33,26 @@ public class TrustyCertificateValidator {
         this.certPathValidator = certPathValidator;
         this.ocspValidator = ocspValidator;
     }
+    
+    public Map<BigInteger, TrustyCertValidationCode> validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+        return validate(certs, new Date());
+    }
+    
+    /**
+     * @param date null is disable expire date verification
+     */
+    public Map<BigInteger, TrustyCertValidationCode> validate(Set<X509Certificate> certs, Date date) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+        return ExceptionHandler.handleFutureResult(validateAsync(certs, date));
+    }
+    
+    public CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> validateAsync(Set<X509Certificate> certs) {
+        return validateAsync(certs, new Date());
+    }
 
-    public CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> validate(Set<X509Certificate> certs) {
+    /**
+     * @param date null is disable expire date verification
+     */
+    public CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> validateAsync(Set<X509Certificate> certs, Date date) {
         Set<X509Certificate> fullList = new HashSet<>();
         
         Map<BigInteger, List<X509Certificate>> serial2Path = new HashMap<>();
@@ -40,9 +65,9 @@ public class TrustyCertificateValidator {
             serial2Path.put(cert.getSerialNumber(), fullCertPath);
         }
         
-        CompletableFuture<Map<BigInteger, TrustyOCSPStatus>> ocspFuture = ocspValidator.validate(fullList).thenApply(TrustyOCSPValidationResult::getStatuses);
+        CompletableFuture<Map<BigInteger, TrustyOCSPStatus>> ocspFuture = ocspValidator.validateAsync(fullList).thenApply(TrustyOCSPValidationResult::getStatuses);
         
-        CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> certPathFuture = certPathValidator.validate(certs);
+        CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> certPathFuture = certPathValidator.validateAsync(certs, date);
         
         return certPathFuture.thenCombine(ocspFuture, (certPathRes, ocspRes) -> {
             for (Entry<BigInteger, TrustyCertValidationCode> e : certPathRes.entrySet()) {

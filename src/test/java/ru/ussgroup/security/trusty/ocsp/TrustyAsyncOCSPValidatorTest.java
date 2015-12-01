@@ -24,8 +24,7 @@ public class TrustyAsyncOCSPValidatorTest {
         
         TrustyOCSPValidator validator = new TrustyCachedOCSPValidator(new KalkanOCSPValidator("http://ocsp.pki.gov.kz/ocsp/", repository), 5, 60);
         
-        TrustyOCSPValidationResult result = validator.validate(ImmutableSet.of(oldGostCert, oldRsaCert, oldRsaExpiredCert, oldRsaRevokedCert))
-                                                     .get();
+        TrustyOCSPValidationResult result = validator.validateAsync(ImmutableSet.of(oldGostCert, oldRsaCert, oldRsaExpiredCert, oldRsaRevokedCert)).get();
 
         Assert.assertEquals(TrustyOCSPStatus.GOOD,    result.getStatuses().get(oldGostCert.getSerialNumber()).getStatus());
         Assert.assertEquals(TrustyOCSPStatus.GOOD,    result.getStatuses().get(oldRsaCert.getSerialNumber()).getStatus());

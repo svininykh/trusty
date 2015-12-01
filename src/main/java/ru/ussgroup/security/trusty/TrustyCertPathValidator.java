@@ -25,31 +25,25 @@ import ru.ussgroup.security.trusty.repository.TrustyRepository;
 public class TrustyCertPathValidator {
     private final TrustyRepository repository;
     
-    private final String iin, bin;
-    
-    private final boolean checkIsEnterprise, checkIsPersonal, checkForSigning, checkForAuth;
-    
-    private final Date date;
-    
     private final String provider;
     
-    public TrustyCertPathValidator(TrustyRepository repository, String iin, String bin, boolean checkIsEnterprise,  boolean checkIsPersonal, boolean checkForSigning, boolean checkForAuth, Date date, String provider) {
+    public TrustyCertPathValidator(TrustyRepository repository, String provider) {
         this.repository = repository;
-        this.iin = iin;
-        this.bin = bin;
-        this.checkIsEnterprise = checkIsEnterprise;
-        this.checkIsPersonal = checkIsPersonal;
-        this.checkForSigning = checkForSigning;
-        this.checkForAuth = checkForAuth;
-        this.date = date;
         this.provider = provider;
     }
     
-    public CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> validate(Set<X509Certificate> certs) {
+    public CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> validateAsync(Set<X509Certificate> certs) {
+        return validateAsync(certs, new Date());
+    }
+    
+    /**
+     * @param date null is disable expire date verification
+     */
+    public CompletableFuture<Map<BigInteger, TrustyCertValidationCode>> validateAsync(Set<X509Certificate> certs, Date date) {
         return CompletableFuture.supplyAsync(() -> {
             return certs.parallelStream().collect(Collectors.toConcurrentMap(X509Certificate::getSerialNumber, c -> {
                 try {
-                    validate(c);
+                    validate(c, date);
                     
                     return TrustyCertValidationCode.SUCCESS;
                 } catch (Exception e) {
@@ -58,12 +52,20 @@ public class TrustyCertPathValidator {
             }));
         });
     }
-        
+    
     public void validate(X509Certificate cert) throws CertPathValidatorException, CertificateException {
+        validate(cert, new Date());
+    }
+        
+    /**
+     * @param date null is disable expire date verification
+     */
+    public void validate(X509Certificate cert, Date date) throws CertPathValidatorException, CertificateException {
         try {
             PKIXBuilderParameters params = new PKIXBuilderParameters(repository.getTrustedCerts().stream().map(c -> new TrustAnchor(c, null)).collect(Collectors.toSet()), null);
             params.setRevocationEnabled(false);
-            params.setDate(date);
+            
+            params.setDate(date != null ? date : cert.getNotBefore());
         
             try {
                 if (provider != null) {
@@ -74,94 +76,8 @@ public class TrustyCertPathValidator {
             } catch (NoSuchProviderException e) {
                 throw new RuntimeException(e);
             }
-            
-            if (checkForAuth && !TrustyKeyUsageChecker.getKeyUsage(cert).contains(TrustyKeyUsage.AUTHENTICATION)) {
-                throw new CertificateException("Certificate is not for auth");
-            }
-            
-            if (checkForSigning && !TrustyKeyUsageChecker.getKeyUsage(cert).contains(TrustyKeyUsage.SIGNING)) {
-                throw new CertificateException("Certificate is not for signing");
-            }
-            
-            TrustySubjectDNParser p = new TrustySubjectDNParser(cert.getSubjectDN());
-            
-            if (iin != null && !p.getIin().equals(iin)) {
-                throw new CertificateException("IIN not equals");
-            }
-            
-            if (bin != null && !p.getBin().equals(bin)) {
-                throw new CertificateException("BIN not equals");
-            }
-            
-            if (checkIsEnterprise && p.getBin() == null) {
-                throw new CertificateException("Certificate not include BIN");
-            }
-            
-            if (checkIsPersonal && p.getBin() != null) {
-                throw new CertificateException("Certificate include BIN");
-            }
         } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
-        }
-    }
-    
-    public static class Builder {
-        private String iin, bin;
-        
-        private boolean checkIsEnterprise, checkIsPersonal, checkForSigning, checkForAuth;
-        
-        private TrustyRepository repository;
-        
-        private Date date;
-        
-        private String provider;
-        
-        public Builder(TrustyRepository repository) {
-            this.repository = repository;
-        }
-
-        public Builder checkIin(String iin) {
-            this.iin = iin;
-            return this;
-        }
-        
-        public Builder checkBin(String bin) {
-            this.bin = bin;
-            return this;
-        }
-        
-        public Builder checkIsEnterprise() {
-            this.checkIsEnterprise = true;
-            return this;
-        }
-        
-        public Builder checkIsPersonal() {
-            this.checkIsPersonal = true;
-            return this;
-        }
-        
-        public Builder checkForSigning() {
-            this.checkForSigning = true;
-            return this;
-        }
-        
-        public Builder checkForAuth() {
-            this.checkForAuth = true;
-            return this;
-        }
-        
-        public Builder setDate(Date date) {
-            this.date = date;
-            return this;
-        }
-        
-        public Builder setProvider(String provider) {
-            this.provider = provider;
-            return this;
-        }
-        
-        public TrustyCertPathValidator build() {
-            return new TrustyCertPathValidator(repository, iin, bin, checkIsEnterprise, checkIsPersonal, checkForSigning, checkForAuth, date, provider);
         }
     }
 }

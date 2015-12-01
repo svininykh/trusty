@@ -32,7 +32,7 @@ import kz.gov.pki.kalkan.ocsp.CertificateID;
 import kz.gov.pki.kalkan.ocsp.OCSPException;
 import kz.gov.pki.kalkan.ocsp.OCSPReqGenerator;
 import kz.gov.pki.kalkan.ocsp.OCSPResp;
-import ru.ussgroup.security.trusty.ocsp.TrustyOCSPNotAvailableException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPNotAvailableException;
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
 import ru.ussgroup.security.trusty.utils.DnsResolver;
 
@@ -109,8 +109,8 @@ public class KalkanOCSPRequestSender {
             f.addListener(() -> {
                 try {
                     completableFuture.complete(f.get());
-                } catch (InterruptedException | ExecutionException e) {
-                    completableFuture.completeExceptionally(new TrustyOCSPNotAvailableException(e));
+                } catch (InterruptedException | ExecutionException e) {//Сделал двойную вложенность, для унификации обработки в синхронных методах
+                    completableFuture.completeExceptionally(new RuntimeException(new TrustyOCSPNotAvailableException(e)));
                 }
             }, r -> {r.run();});
             

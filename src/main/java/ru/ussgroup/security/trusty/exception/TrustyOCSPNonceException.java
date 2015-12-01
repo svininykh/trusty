@@ -1,4 +1,4 @@
-package ru.ussgroup.security.trusty.ocsp;
+package ru.ussgroup.security.trusty.exception;
 
 public class TrustyOCSPNonceException extends Exception {
 	public TrustyOCSPNonceException() {
