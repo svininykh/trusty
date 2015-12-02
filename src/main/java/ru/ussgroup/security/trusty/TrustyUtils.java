@@ -14,8 +14,8 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -161,10 +161,16 @@ public class TrustyUtils {
         return new String(Base64.getEncoder().encode(key.getEncoded()));
     }
     
-    public static X509Certificate loadFromString(String base64Encoded) throws CertificateException {
-        X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(base64Encoded)));
+    public static X509Certificate loadFromString(String base64Encoded) throws CertificateParsingException {
+        X509Certificate cert = null;
+        
+        try {
+            cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(base64Encoded)));
+        } catch (Exception e) {
+            throw new CertificateParsingException(e);
+        }
 
-        if (cert == null) throw new CertificateException();
+        if (cert == null) throw new CertificateParsingException();
 
         return cert;
     }

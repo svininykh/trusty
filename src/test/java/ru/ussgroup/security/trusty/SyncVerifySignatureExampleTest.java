@@ -10,7 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
-import ru.ussgroup.security.trusty.exception.TrustyOCSPCertPathValidatorException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPCertificateException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNonceException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNotAvailableException;
@@ -41,7 +40,7 @@ public class SyncVerifySignatureExampleTest {
     }
     
     @Test(expected = TrustyOCSPNotAvailableException.class)
-    public void shouldSyncVerifySignature() throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+    public void shouldSyncVerifySignature() throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPUnknownProblemException {
         X500PrivateCredential cert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_1.0.p12", "123456");
         
         byte[] data = "Привет!".getBytes(StandardCharsets.UTF_8);

@@ -5,8 +5,6 @@ import java.math.BigInteger;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.Security;
-import java.security.cert.CertPathValidatorException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.HashMap;
@@ -23,7 +21,6 @@ import kz.gov.pki.kalkan.ocsp.OCSPResp;
 import kz.gov.pki.kalkan.ocsp.RevokedStatus;
 import kz.gov.pki.kalkan.ocsp.SingleResp;
 import ru.ussgroup.security.trusty.TrustyCertPathValidator;
-import ru.ussgroup.security.trusty.exception.TrustyOCSPCertPathValidatorException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPCertificateException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNonceException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPUnknownProblemException;
@@ -55,7 +52,7 @@ public class KalkanOCSPResponseChecker {
         validator = new TrustyCertPathValidator(trustyRepository, KalkanProvider.PROVIDER_NAME);
     }
 
-    public TrustyOCSPValidationResult checkResponse(OCSPResp response, byte[] nonce) throws TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPNonceException, TrustyOCSPUnknownProblemException {
+    public TrustyOCSPValidationResult checkResponse(OCSPResp response, byte[] nonce) throws TrustyOCSPCertificateException, TrustyOCSPNonceException, TrustyOCSPUnknownProblemException {
         try {
             if (response.getStatus() != 0) {
                 throw new RuntimeException("Unsuccessful request. Status: " + response.getStatus());
@@ -101,9 +98,7 @@ public class KalkanOCSPResponseChecker {
             
             try {
                 validator.validate(ocspcert);
-            } catch (CertPathValidatorException e1) {
-                throw new TrustyOCSPCertPathValidatorException(e1);
-            } catch (CertificateException e1) {
+            } catch (Exception e1) {
                 throw new TrustyOCSPCertificateException(e1);
             }
             

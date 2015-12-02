@@ -5,7 +5,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import kz.gov.pki.kalkan.ocsp.OCSPResp;
-import ru.ussgroup.security.trusty.exception.TrustyOCSPCertPathValidatorException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPCertificateException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNonceException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNotAvailableException;
@@ -42,7 +41,7 @@ public class KalkanOCSPValidator implements TrustyOCSPValidator {
     }
 
     @Override
-    public TrustyOCSPValidationResult validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+    public TrustyOCSPValidationResult validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPUnknownProblemException {
         return ExceptionHandler.handleFutureResult(validateAsync(certs));
     }
     

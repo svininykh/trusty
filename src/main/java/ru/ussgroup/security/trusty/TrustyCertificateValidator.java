@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import ru.ussgroup.security.trusty.exception.TrustyOCSPCertPathValidatorException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPCertificateException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNonceException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNotAvailableException;
@@ -34,14 +33,14 @@ public class TrustyCertificateValidator {
         this.ocspValidator = ocspValidator;
     }
     
-    public Map<BigInteger, TrustyCertValidationCode> validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+    public Map<BigInteger, TrustyCertValidationCode> validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPUnknownProblemException {
         return validate(certs, new Date());
     }
     
     /**
      * @param date null is disable expire date verification
      */
-    public Map<BigInteger, TrustyCertValidationCode> validate(Set<X509Certificate> certs, Date date) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+    public Map<BigInteger, TrustyCertValidationCode> validate(Set<X509Certificate> certs, Date date) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPUnknownProblemException {
         return ExceptionHandler.handleFutureResult(validateAsync(certs, date));
     }
     

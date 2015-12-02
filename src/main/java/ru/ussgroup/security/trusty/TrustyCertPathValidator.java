@@ -1,13 +1,13 @@
 package ru.ussgroup.security.trusty;
 
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.SignatureException;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
-import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
@@ -46,21 +46,27 @@ public class TrustyCertPathValidator {
                     validate(c, date);
                     
                     return TrustyCertValidationCode.SUCCESS;
-                } catch (Exception e) {
+                } catch (CertificateNotYetValidException e) {
+                    return TrustyCertValidationCode.CERT_NOT_YET_VALID;
+                } catch (CertificateExpiredException e) {
+                    return TrustyCertValidationCode.CERT_EXPIRED;
+                } catch (SignatureException e) {
+                    return TrustyCertValidationCode.CERT_SIGNATURE_EXCEPTION;
+                } catch (CertPathValidatorException e) {
                     return TrustyCertValidationCode.CERT_PATH_FAILED;
                 }
             }));
         });
     }
     
-    public void validate(X509Certificate cert) throws CertPathValidatorException, CertificateException {
+    public void validate(X509Certificate cert) throws CertificateNotYetValidException, CertificateExpiredException, SignatureException, CertPathValidatorException {
         validate(cert, new Date());
     }
         
     /**
      * @param date null is disable expire date verification
      */
-    public void validate(X509Certificate cert, Date date) throws CertPathValidatorException, CertificateException {
+    public void validate(X509Certificate cert, Date date) throws CertificateNotYetValidException, CertificateExpiredException, SignatureException, CertPathValidatorException {
         try {
             PKIXBuilderParameters params = new PKIXBuilderParameters(repository.getTrustedCerts().stream().map(c -> new TrustAnchor(c, null)).collect(Collectors.toSet()), null);
             params.setRevocationEnabled(false);
@@ -76,8 +82,35 @@ public class TrustyCertPathValidator {
             } catch (NoSuchProviderException e) {
                 throw new RuntimeException(e);
             }
-        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            //CertificateNotYetValidException.getReason не поддерживается калканом ((
+            if (e.getCause() != null) {
+                if (e.getCause() instanceof CertificateNotYetValidException) {
+                    CertificateNotYetValidException e1 = (CertificateNotYetValidException) e.getCause();
+                    
+                    throw e1;
+                }
+                
+                if (e.getCause() instanceof CertificateExpiredException) {
+                    CertificateExpiredException e1 = (CertificateExpiredException) e.getCause();
+                    
+                    throw e1;
+                }
+                
+                if (e.getCause() instanceof SignatureException) {
+                    SignatureException e1 = (SignatureException) e.getCause();
+                    
+                    throw e1;
+                }
+            }
+            
+            if (e instanceof CertPathValidatorException) {
+                CertPathValidatorException e1 = (CertPathValidatorException) e.getCause();
+                
+                throw e1;
+            }
+            
+            throw new CertPathValidatorException(e);
         }
     }
 }

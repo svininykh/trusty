@@ -1,9 +1,12 @@
 package ru.ussgroup.security.trusty;
 
+import java.security.SignatureException;
 import java.security.cert.CertPathValidatorException;
-import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -15,7 +18,7 @@ import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
 import ru.ussgroup.security.trusty.repository.TrustyKeyStoreRepository;
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
 
-public class TrustyCertificateValidatorTest {
+public class TrustyCertPathValidatorTest {
     private static TrustyCertPathValidator validator;
     
     @BeforeClass
@@ -25,8 +28,8 @@ public class TrustyCertificateValidatorTest {
         validator = new TrustyCertPathValidator(repository, KalkanProvider.PROVIDER_NAME);
     }
     
-    @Test
-    public void shouldValidateCertificates() throws Exception {
+    @Test(expected = SignatureException.class)
+    public void shouldValidateCertificates() throws Throwable {
         X509Certificate oldGostCert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_1.0.p12", "123456").getCertificate();
         X509Certificate newGostCert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_2.0.p12", "123456").getCertificate();
         X509Certificate oldRsaCert = TrustyUtils.loadCredentialFromResources("/example/ul_rsa_1.0.p12", "123456").getCertificate();
@@ -36,10 +39,36 @@ public class TrustyCertificateValidatorTest {
         validator.validate(newGostCert);
         validator.validate(oldRsaCert);
         validator.validate(newRsaCert);
+        
+        
+        byte[] bytes = newRsaCert.getEncoded();
+        
+        int index = 0;
+        
+        for (int i = 0; i < bytes.length; i++) {
+            byte b = bytes[i];
+            
+            if (b == (byte) '@') {
+                index = i;
+                break;
+            }
+        }
+        
+        bytes[index] = '$';//подделываем сертификат
+        
+        String base64 = new String(Base64.getEncoder().encode(bytes));
+        
+        X509Certificate cert = TrustyUtils.loadFromString(base64);
+        
+        try {
+            validator.validate(cert);
+        } catch (Exception e) {
+            throw e.getCause();
+        }
     }
     
     @Test(expected = CertPathValidatorException.class)
-    public void shouldThrowExceptionIfExpired() throws CertPathValidatorException, CertificateException {
+    public void shouldThrowExceptionIfExpired() throws CertificateNotYetValidException, CertificateExpiredException, SignatureException, CertPathValidatorException {
         X509Certificate oldExpiredRsaCert = TrustyUtils.loadCredentialFromResources("/example/ul_rsa_1.0_expired.p12", "123456").getCertificate();
         
         validator.validate(oldExpiredRsaCert);

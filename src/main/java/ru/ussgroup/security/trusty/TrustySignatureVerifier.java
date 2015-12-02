@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import ru.ussgroup.security.trusty.exception.TrustyOCSPCertPathValidatorException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPCertificateException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNonceException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNotAvailableException;
@@ -27,14 +26,14 @@ public class TrustySignatureVerifier {
         this.certificateValidator = certificateValidator;
     }
     
-    public List<SignedData> verify(List<SignedData> list) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+    public List<SignedData> verify(List<SignedData> list) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPUnknownProblemException {
         return verify(list, new Date());
     }
     
     /**
      * @param date null is disable expire date verification
      */
-    public List<SignedData> verify(List<SignedData> list, Date date) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+    public List<SignedData> verify(List<SignedData> list, Date date) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPUnknownProblemException {
         return ExceptionHandler.handleFutureResult(verifyAsync(list, date));
     }
     

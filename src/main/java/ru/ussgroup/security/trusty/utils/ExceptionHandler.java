@@ -3,14 +3,13 @@ package ru.ussgroup.security.trusty.utils;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import ru.ussgroup.security.trusty.exception.TrustyOCSPCertPathValidatorException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPCertificateException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNonceException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNotAvailableException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPUnknownProblemException;
 
 public class ExceptionHandler {
-    public static <T> T handleFutureResult(Future<T> future) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+    public static <T> T handleFutureResult(Future<T> future) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPUnknownProblemException {
         try {
             return future.get();
         } catch (InterruptedException | ExecutionException e) {
@@ -18,7 +17,7 @@ public class ExceptionHandler {
             
             try {
                 throw originalException;
-            } catch (TrustyOCSPNotAvailableException | TrustyOCSPNonceException | TrustyOCSPCertificateException | TrustyOCSPCertPathValidatorException | TrustyOCSPUnknownProblemException e1) {
+            } catch (TrustyOCSPNotAvailableException | TrustyOCSPNonceException | TrustyOCSPCertificateException | TrustyOCSPUnknownProblemException e1) {
                 e1.fillInStackTrace();//for correct line number
                 
                 throw e1;

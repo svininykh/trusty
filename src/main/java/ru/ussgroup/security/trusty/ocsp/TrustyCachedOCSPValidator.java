@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
-import ru.ussgroup.security.trusty.exception.TrustyOCSPCertPathValidatorException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPCertificateException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNonceException;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNotAvailableException;
@@ -95,7 +94,7 @@ public class TrustyCachedOCSPValidator implements TrustyOCSPValidator {
     }
 
     @Override
-    public TrustyOCSPValidationResult validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPCertPathValidatorException, TrustyOCSPUnknownProblemException {
+    public TrustyOCSPValidationResult validate(Set<X509Certificate> certs) throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPUnknownProblemException {
         return ExceptionHandler.handleFutureResult(validateAsync(certs));
     }
     
