@@ -60,14 +60,10 @@ public class TrustyCertPathValidatorTest {
         
         X509Certificate cert = TrustyUtils.loadFromString(base64);
         
-        try {
-            validator.validate(cert);
-        } catch (Exception e) {
-            throw e.getCause();
-        }
+        validator.validate(cert);
     }
     
-    @Test(expected = CertPathValidatorException.class)
+    @Test(expected = CertificateExpiredException.class)
     public void shouldThrowExceptionIfExpired() throws CertificateNotYetValidException, CertificateExpiredException, SignatureException, CertPathValidatorException {
         X509Certificate oldExpiredRsaCert = TrustyUtils.loadCredentialFromResources("/example/ul_rsa_1.0_expired.p12", "123456").getCertificate();
         
