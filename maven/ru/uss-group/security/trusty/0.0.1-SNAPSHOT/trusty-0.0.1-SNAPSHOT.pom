@@ -19,11 +19,11 @@
       <version>1.9.30</version>
     </dependency>
     
-    <dependency>
-      <groupId>kz.gov.pki</groupId>
+    <dependency> 
+      <groupId>kz.gov.pki.knca</groupId>
       <artifactId>kalkan</artifactId>
-      <version>12.10.2015</version>
-    </dependency>
+      <version>0.1.1</version>
+    </dependency> 
     
     <dependency>
       <groupId>org.apache.santuario</groupId>
@@ -38,9 +38,9 @@
     </dependency>
     
     <dependency>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-          <version>4.12</version>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
     </dependency>
   </dependencies>
   
@@ -92,12 +92,8 @@
   
   <repositories>
     <repository>
-      <id>ru.uss-group</id>
+      <id>ru.uss-group.new</id>
       <url>https://raw.githubusercontent.com/man4j/trusty/master/maven</url>
     </repository>
-    <repository>
-      <id>ru.uss-group.new</id>
-      <url>https://github.com/man4j/trusty/blob/master/maven</url>
-      </repository>
   </repositories>
 </project>

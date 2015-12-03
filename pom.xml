@@ -19,11 +19,11 @@
       <version>1.9.30</version>
     </dependency>
     
-    <dependency>
+    <dependency> 
       <groupId>kz.gov.pki.knca</groupId>
       <artifactId>kalkan</artifactId>
       <version>0.1.1</version>
-    </dependency>
+    </dependency> 
     
     <dependency>
       <groupId>org.apache.santuario</groupId>
@@ -92,12 +92,8 @@
   
   <repositories>
     <repository>
-      <id>ru.uss-group</id>
+      <id>ru.uss-group.new</id>
       <url>https://raw.githubusercontent.com/man4j/trusty/master/maven</url>
     </repository>
-    <repository>
-      <id>ru.uss-group.new</id>
-      <url>https://github.com/man4j/trusty/blob/master/maven</url>
-      </repository>
   </repositories>
 </project>
