@@ -7,6 +7,8 @@ import java.util.Base64;
 import ru.ussgroup.security.trusty.TrustyCertValidationCode;
 
 public class SignedData {
+    private Object id;
+    
     private byte[] data;
     
     private byte[] signature;
@@ -18,10 +20,18 @@ public class SignedData {
     private TrustyCertValidationCode certStatus;
     
     public SignedData(String data, String signature, X509Certificate cert) {
-        this(data.getBytes(StandardCharsets.UTF_8), Base64.getDecoder().decode(signature), cert);
+        this(null, data, signature, cert);
+    }
+    
+    public SignedData(Object id, String data, String signature, X509Certificate cert) {
+        this(id, data.getBytes(StandardCharsets.UTF_8), Base64.getDecoder().decode(signature), cert);
     }
     
     public SignedData(byte[] data, byte[] signature, X509Certificate cert) {
+        this(null, data, signature, cert);
+    }
+    
+    public SignedData(Object id, byte[] data, byte[] signature, X509Certificate cert) {
         this.data = data;
         this.signature = signature;
         this.cert = cert;
@@ -53,5 +63,9 @@ public class SignedData {
 
     public void setCertStatus(TrustyCertValidationCode certStatus) {
         this.certStatus = certStatus;
+    }
+    
+    public Object getId() {
+        return id;
     }
 }
