@@ -28,19 +28,19 @@ public class TrustySubjectDNParser {
                 String value = seq.getObjectAt(1).toString();
                 
                 if (key.equals(X509Principal.SERIALNUMBER.getId())) {
-                    names.put(X509Principal.SERIALNUMBER.getId(), value);
+                    names.put("SERIALNUMBER", value);
                 }
                 
                 if (key.equals(X509Principal.OU.getId())) {
-                    names.put(X509Principal.OU.getId(), value);
+                    names.put("OU", value);
                 }
                 
                 if (key.equals(X509Principal.CN.getId())) {
-                    names.put(X509Principal.CN.getId(), value);
+                    names.put("CN", value);
                 }
                 
                 if (key.equals(X509Principal.EmailAddress.getId())) {
-                    names.put(X509Principal.EmailAddress.getId(), value);
+                    names.put("EMAILADDRESS", value);
                 }
             }
         } else {
@@ -55,18 +55,18 @@ public class TrustySubjectDNParser {
     }
     
     public String getIin() {
-        return names.get(X509Principal.SERIALNUMBER.getId()).substring(3);
+        return names.get("SERIALNUMBER").substring(3);
     }
     
     public String getBin() {
-        return names.get(X509Principal.OU.getId()).substring(3);
+        return names.get("OU").substring(3);
     }
     
     public String getCommonName() {
-        return names.get(X509Principal.CN.getId()).substring(3);
+        return names.get("CN").substring(3);
     }
     
     public String getEmail() {
-        return names.get(X509Principal.EmailAddress.getId());
+        return names.get("EMAILADDRESS");
     }
 }
