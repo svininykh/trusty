@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import kz.gov.pki.kalkan.asn1.DERSequence;
 import kz.gov.pki.kalkan.asn1.DERSet;
@@ -55,15 +56,15 @@ public class TrustySubjectDNParser {
     }
     
     public String getIin() {
-        return names.get("SERIALNUMBER").substring(3);
+        return Optional.ofNullable(names.get("SERIALNUMBER")).map(s -> s.substring(3)).orElse(null);
     }
     
     public String getBin() {
-        return names.get("OU").substring(3);
+        return Optional.ofNullable(names.get("OU")).map(s -> s.substring(3)).orElse(null);
     }
     
     public String getCommonName() {
-        return names.get("CN").substring(3);
+        return names.get("CN");
     }
     
     public String getEmail() {
