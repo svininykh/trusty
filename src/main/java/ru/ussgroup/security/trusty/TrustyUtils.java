@@ -9,7 +9,6 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
@@ -53,17 +52,7 @@ import ru.ussgroup.security.trusty.repository.TrustyRepository;
 */
 public class TrustyUtils {
     static {
-        boolean exists = false;
-    
-        for (Provider p : Security.getProviders()) {
-            if (p.getName().equals(KalkanProvider.PROVIDER_NAME)) {
-                exists = true;
-            }
-        }
-    
-        if (!exists) {
-            Security.addProvider(new KalkanProvider());
-        }
+        if (Security.getProvider(KalkanProvider.PROVIDER_NAME) == null) Security.addProvider(new KalkanProvider());
     }
     
     public static List<X509Certificate> getCertPath(X509Certificate cert, TrustyRepository repository) {
@@ -165,7 +154,7 @@ public class TrustyUtils {
         X509Certificate cert = null;
         
         try {
-            cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(base64Encoded)));
+            cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(removeNewLines(base64Encoded))));
         } catch (Exception e) {
             throw new CertificateParsingException(e);
         }
@@ -192,5 +181,9 @@ public class TrustyUtils {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    public static String removeNewLines(String s) {
+        return s.replace("\r", "").replace("\n", "");
     }
 }

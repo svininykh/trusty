@@ -5,6 +5,7 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 
 import ru.ussgroup.security.trusty.TrustyCertValidationCode;
+import ru.ussgroup.security.trusty.TrustyUtils;
 
 public class SignedData {
     private Object id;
@@ -24,7 +25,7 @@ public class SignedData {
     }
     
     public SignedData(Object id, String data, String signature, X509Certificate cert) {
-        this(id, data.getBytes(StandardCharsets.UTF_8), Base64.getDecoder().decode(signature), cert);
+        this(id, data.getBytes(StandardCharsets.UTF_8), Base64.getDecoder().decode(TrustyUtils.removeNewLines(signature)), cert);
     }
     
     public SignedData(byte[] data, byte[] signature, X509Certificate cert) {

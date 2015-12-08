@@ -3,7 +3,6 @@ package ru.ussgroup.security.trusty.ocsp.kalkan;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.NoSuchProviderException;
-import java.security.Provider;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
@@ -35,17 +34,7 @@ public class KalkanOCSPResponseChecker {
     private final TrustyCertPathValidator validator;
     
     static {
-        boolean exists = false;
-    
-        for (Provider p : Security.getProviders()) {
-            if (p.getName().equals(KalkanProvider.PROVIDER_NAME)) {
-                exists = true;
-            }
-        }
-    
-        if (!exists) {
-            Security.addProvider(new KalkanProvider());
-        }
+        if (Security.getProvider(KalkanProvider.PROVIDER_NAME) == null) Security.addProvider(new KalkanProvider());
     }
     
     public KalkanOCSPResponseChecker(TrustyRepository trustyRepository) {

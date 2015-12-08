@@ -1,1 +1,1 @@
-﻿keytool -import -trustcacerts -alias kuc_gost -file kuc_gost_1.0.crt -keystore trusted.jks
+﻿keytool -import -trustcacerts -alias kuc_gost -file kuc_gost_1.0.crt -keystore kalkan_repository.jks

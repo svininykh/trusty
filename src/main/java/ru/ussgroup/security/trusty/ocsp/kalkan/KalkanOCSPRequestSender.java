@@ -1,7 +1,6 @@
 package ru.ussgroup.security.trusty.ocsp.kalkan;
 
 import java.io.IOException;
-import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -18,13 +17,9 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 
-import kz.gov.pki.kalkan.asn1.ASN1EncodableVector;
 import kz.gov.pki.kalkan.asn1.DERObjectIdentifier;
 import kz.gov.pki.kalkan.asn1.DEROctetString;
-import kz.gov.pki.kalkan.asn1.DERSequence;
-import kz.gov.pki.kalkan.asn1.knca.KNCAObjectIdentifiers;
 import kz.gov.pki.kalkan.asn1.ocsp.OCSPObjectIdentifiers;
-import kz.gov.pki.kalkan.asn1.x509.AlgorithmIdentifier;
 import kz.gov.pki.kalkan.asn1.x509.X509Extension;
 import kz.gov.pki.kalkan.asn1.x509.X509Extensions;
 import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
@@ -49,17 +44,7 @@ public class KalkanOCSPRequestSender {
     private final SecureRandom sr = new SecureRandom();
     
     static {
-        boolean exists = false;
-    
-        for (Provider p : Security.getProviders()) {
-            if (p.getName().equals(KalkanProvider.PROVIDER_NAME)) {
-                exists = true;
-            }
-        }
-    
-        if (!exists) {
-            Security.addProvider(new KalkanProvider());
-        }
+        if (Security.getProvider(KalkanProvider.PROVIDER_NAME) == null) Security.addProvider(new KalkanProvider());
     }
     
     static {
@@ -84,13 +69,15 @@ public class KalkanOCSPRequestSender {
     
     public KalkanOCSPResponse sendRequest(Set<X509Certificate> certs) {
         try {
-            byte[] nonce = new byte[4];
+            byte[] nonce = new byte[8];
             sr.nextBytes(nonce);
             
             List<CertificateID> ids = new ArrayList<>();
             
             for (X509Certificate cert : certs) {
-                ids.add(new CertificateID(CertificateID.HASH_GOST34311GT, trustyRepository.getIssuer(cert), cert.getSerialNumber(), KalkanProvider.PROVIDER_NAME));
+                //Указываем алгоритм хэширования.
+                //Принципиальной разницы для сервера нет и не зависит от алгоритма подписи сертификата
+                ids.add(new CertificateID(CertificateID.HASH_SHA1, trustyRepository.getIssuer(cert), cert.getSerialNumber(), KalkanProvider.PROVIDER_NAME));
             }
             
             ListenableFuture<OCSPResp> f = httpClient.preparePost(ocspUrl)
@@ -136,13 +123,6 @@ public class KalkanOCSPRequestSender {
         Hashtable<DERObjectIdentifier, X509Extension> exts = new Hashtable<>();
         
         exts.put(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, new X509Extension(false, new DEROctetString(new DEROctetString(nonce))));
-
-        ASN1EncodableVector prefSigAlgV = new ASN1EncodableVector();
-//      prefSigAlgV.add(new AlgorithmIdentifier(CryptoProObjectIdentifiers.gostR3411_94_with_gostR34310_2004));
-        prefSigAlgV.add(new AlgorithmIdentifier(KNCAObjectIdentifiers.gost34311_95_with_gost34310_2004));
-        ASN1EncodableVector prefSigAlgsV = new ASN1EncodableVector();
-        prefSigAlgsV.add(new DERSequence(prefSigAlgV));
-        exts.put(OCSPObjectIdentifiers.id_pkix_ocsp_pref_sig_algs, new X509Extension(false, new DEROctetString(new DERSequence(prefSigAlgsV))));
         
         return new X509Extensions(exts);
     }
