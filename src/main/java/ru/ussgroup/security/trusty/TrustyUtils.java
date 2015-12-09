@@ -184,6 +184,6 @@ public class TrustyUtils {
     }
     
     public static String removeNewLines(String s) {
-        return s.replace("\r", "").replace("\n", "");
+        return s.replace("\r", "").replace("\n", "").replace(" ", "");
     }
 }
