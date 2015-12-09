@@ -1,6 +1,7 @@
 package ru.ussgroup.security.trusty.ocsp.kalkan;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -37,6 +38,8 @@ import ru.ussgroup.security.trusty.utils.DnsResolver;
 public class KalkanOCSPRequestSender {
     private final String ocspUrl;
     
+    private final String ip;
+    
     private final TrustyRepository trustyRepository;
     
     private final static AsyncHttpClient httpClient;
@@ -61,8 +64,9 @@ public class KalkanOCSPRequestSender {
         });
     }
     
-    public KalkanOCSPRequestSender(String ocspUrl, TrustyRepository trustyRepository) {
+    public KalkanOCSPRequestSender(String ocspUrl, String ip, TrustyRepository trustyRepository) {
         this.ocspUrl = ocspUrl;
+        this.ip = ip;
         this.trustyRepository = trustyRepository;
         DnsResolver.addDomainName(ocspUrl);
     }
@@ -82,7 +86,7 @@ public class KalkanOCSPRequestSender {
             
             ListenableFuture<OCSPResp> f = httpClient.preparePost(ocspUrl)
                                                      .setHeader("Content-Type", "application/ocsp-request")
-                                                     .setInetAddress(DnsResolver.getInetAddress(ocspUrl))
+                                                     .setInetAddress(Inet4Address.getByName(ip))
                                                      .setBody(getOcspPackage(ids, nonce))
                                                      .execute(new AsyncCompletionHandler<OCSPResp>() {
                                                          @Override

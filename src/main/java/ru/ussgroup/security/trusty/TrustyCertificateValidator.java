@@ -2,6 +2,7 @@ package ru.ussgroup.security.trusty;
 
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,7 +58,7 @@ public class TrustyCertificateValidator {
         Map<BigInteger, List<X509Certificate>> serial2Path = new HashMap<>();
         
         for (X509Certificate cert : certs) {
-            List<X509Certificate> fullCertPath = TrustyUtils.getFullCertPath(cert, ocspValidator.getRepository());
+            List<X509Certificate> fullCertPath = Collections.singletonList(cert); //TrustyUtils.getFullCertPath(cert, ocspValidator.getRepository());
             
             fullList.addAll(fullCertPath);
             

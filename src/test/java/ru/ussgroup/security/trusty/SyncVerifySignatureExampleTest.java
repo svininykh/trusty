@@ -30,7 +30,7 @@ public class SyncVerifySignatureExampleTest {
         
         TrustyCertPathValidator certPathValidator = new TrustyCertPathValidator(repository, KalkanProvider.PROVIDER_NAME);
         
-        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://1.1.1.1", repository);
+        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://1.1.1.1", "178.89.4.149", repository);
         
         TrustyOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
         

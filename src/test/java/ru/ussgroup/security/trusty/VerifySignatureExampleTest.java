@@ -33,7 +33,7 @@ public class VerifySignatureExampleTest {
         
         TrustyCertPathValidator certPathValidator = new TrustyCertPathValidator(repository, KalkanProvider.PROVIDER_NAME);
         
-        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://ocsp.pki.gov.kz/ocsp/", repository);
+        TrustyOCSPValidator kalkanOCSPValidator = new KalkanOCSPValidator("http://ocsp.pki.gov.kz/ocsp/", "178.89.4.149", repository);
         
         TrustyOCSPValidator cachedOCSPValidator = new TrustyCachedOCSPValidator(kalkanOCSPValidator, 5, 60);
         
@@ -44,7 +44,7 @@ public class VerifySignatureExampleTest {
     
     @Test
     public void shouldVerifySignature() throws InterruptedException, ExecutionException {
-        X500PrivateCredential cert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_1.0.p12", "123456");
+        X500PrivateCredential cert = TrustyUtils.loadCredentialFromFile("c:/1/testcerts/new_ur_gost.p12", "123456");
         
         byte[] data = "Привет!".getBytes(StandardCharsets.UTF_8);
         
@@ -64,7 +64,7 @@ public class VerifySignatureExampleTest {
     
     @Test
     public void shouldSyncVerifySignature() throws TrustyOCSPNotAvailableException, TrustyOCSPNonceException, TrustyOCSPCertificateException, TrustyOCSPUnknownProblemException {
-        X500PrivateCredential cert = TrustyUtils.loadCredentialFromResources("/example/ul_gost_1.0.p12", "123456");
+        X500PrivateCredential cert = TrustyUtils.loadCredentialFromFile("c:/1/testcerts/new_ur_gost.p12", "123456");
         
         byte[] data = "Привет!".getBytes(StandardCharsets.UTF_8);
         

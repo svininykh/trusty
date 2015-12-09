@@ -22,8 +22,8 @@ public class KalkanOCSPValidator implements TrustyOCSPValidator {
     
     private final KalkanOCSPResponseChecker kalkanOCSPResponseChecker;
     
-    public KalkanOCSPValidator(String ocspUrl, TrustyRepository trustyRepository) {
-        kalkanOCSPRequestSender = new KalkanOCSPRequestSender(ocspUrl, trustyRepository);
+    public KalkanOCSPValidator(String ocspUrl, String ip, TrustyRepository trustyRepository) {
+        kalkanOCSPRequestSender = new KalkanOCSPRequestSender(ocspUrl, ip, trustyRepository);
         kalkanOCSPResponseChecker = new KalkanOCSPResponseChecker(trustyRepository);
     }
     
