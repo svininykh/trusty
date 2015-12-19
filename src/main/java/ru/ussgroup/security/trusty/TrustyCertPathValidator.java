@@ -105,7 +105,7 @@ public class TrustyCertPathValidator {
             }
             
             if (e instanceof CertPathValidatorException) {
-                CertPathValidatorException e1 = (CertPathValidatorException) e.getCause();
+                CertPathValidatorException e1 = (CertPathValidatorException) e;
                 
                 throw e1;
             }

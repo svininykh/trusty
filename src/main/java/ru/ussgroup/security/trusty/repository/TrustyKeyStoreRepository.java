@@ -2,6 +2,7 @@ package ru.ussgroup.security.trusty.repository;
 
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Base64;
@@ -12,16 +13,22 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.common.collect.ImmutableList;
 
+import kz.gov.pki.kalkan.jce.provider.KalkanProvider;
+
 /**
  * This class is thread-safe
  */
 public class TrustyKeyStoreRepository implements TrustyRepository {
+    static {
+        if (Security.getProvider(KalkanProvider.PROVIDER_NAME) == null) Security.addProvider(new KalkanProvider());
+    }
+    
     private final Map<String, X509Certificate> intermediateMap = new ConcurrentHashMap<>();
     private final Map<String, X509Certificate> trustedMap = new ConcurrentHashMap<>();
 
     public TrustyKeyStoreRepository(String resourcePath) {
         try {
-            KeyStore keyStore = KeyStore.getInstance("jks");
+            KeyStore keyStore = KeyStore.getInstance("jks", KalkanProvider.PROVIDER_NAME);
             
             try (InputStream in = TrustyKeyStoreRepository.class.getResourceAsStream(resourcePath)) {
                 keyStore.load(in, "123456".toCharArray());

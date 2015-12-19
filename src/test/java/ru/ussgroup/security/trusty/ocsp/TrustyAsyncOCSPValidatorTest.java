@@ -33,7 +33,7 @@ public class TrustyAsyncOCSPValidatorTest {
         
         TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
         
-        TrustyOCSPValidator validator = new TrustyCachedOCSPValidator(new KalkanOCSPValidator("http://ocsp.pki.gov.kz/", "178.89.4.149", repository), 5, 60);
+        TrustyOCSPValidator validator = new TrustyCachedOCSPValidator(new KalkanOCSPValidator("http://ocsp.pki.gov.kz/ocsp/", "178.89.4.149", repository), 5, 60);
         
         TrustyOCSPValidationResult result = validator.validateAsync(ImmutableSet.of(kucGOST, kucRSA, nucGOST2, nucRSA2, nucGOST1, nucRSA1)).get();
         
@@ -43,17 +43,5 @@ public class TrustyAsyncOCSPValidatorTest {
 //        Assert.assertEquals(TrustyOCSPStatus.GOOD,    result.getStatuses().get(kucRSA.getSerialNumber()).getStatus());
 //        Assert.assertEquals(TrustyOCSPStatus.GOOD,    result.getStatuses().get(nucGOST2.getSerialNumber()).getStatus());
 //        Assert.assertEquals(TrustyOCSPStatus.GOOD,    result.getStatuses().get(nucRSA2.getSerialNumber()).getStatus());
-        
-        X509Certificate privAuth = TrustyUtils.loadCredentialFromFile("c:/1/testcerts/new_priv_auth.p12", "123456").getCertificate();
-        X509Certificate privRsa  = TrustyUtils.loadCredentialFromFile("c:/1/testcerts/new_priv_rsa.p12",  "123456").getCertificate();
-        X509Certificate urAuth = TrustyUtils.loadCredentialFromFile("c:/1/testcerts/new_ur_auth.p12", "123456").getCertificate();
-        X509Certificate urGost  = TrustyUtils.loadCredentialFromFile("c:/1/testcerts/new_ur_gost.p12",  "123456").getCertificate();
-        
-        result = validator.validateAsync(ImmutableSet.of(privAuth, privRsa, urAuth, urGost)).get();
-        
-        Assert.assertEquals(TrustyOCSPStatus.GOOD, result.getStatuses().get(privAuth.getSerialNumber()).getStatus());
-        Assert.assertEquals(TrustyOCSPStatus.GOOD, result.getStatuses().get(privRsa.getSerialNumber()).getStatus());
-        Assert.assertEquals(TrustyOCSPStatus.GOOD, result.getStatuses().get(urAuth.getSerialNumber()).getStatus());
-        Assert.assertEquals(TrustyOCSPStatus.GOOD, result.getStatuses().get(urGost.getSerialNumber()).getStatus());
     }
 }

@@ -104,7 +104,7 @@ public class TrustyUtils {
     
     public static X509Certificate loadCertFromResources(String path) {
         try (InputStream in = TrustyUtils.class.getResourceAsStream(path)) {
-            return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(in);
+            return (X509Certificate) CertificateFactory.getInstance("X.509", KalkanProvider.PROVIDER_NAME).generateCertificate(in);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -112,7 +112,7 @@ public class TrustyUtils {
     
     public static X509Certificate loadCertFromFile(String path) {
         try (InputStream in = new FileInputStream(path)) {
-            return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(in);
+            return (X509Certificate) CertificateFactory.getInstance("X.509", KalkanProvider.PROVIDER_NAME).generateCertificate(in);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -120,7 +120,7 @@ public class TrustyUtils {
     
     public static X500PrivateCredential loadCredentialFromResources(String path, String password) {
         try {
-            KeyStore keyStore = KeyStore.getInstance("pkcs12");
+            KeyStore keyStore = KeyStore.getInstance("pkcs12", KalkanProvider.PROVIDER_NAME);
             
             try (InputStream in = TrustyUtils.class.getResourceAsStream(path)) {
                 return loadCredentialFromStream(password, keyStore, in);
@@ -132,7 +132,7 @@ public class TrustyUtils {
     
     public static X500PrivateCredential loadCredentialFromFile(String path, String password) {
         try {
-            KeyStore keyStore = KeyStore.getInstance("pkcs12");
+            KeyStore keyStore = KeyStore.getInstance("pkcs12", KalkanProvider.PROVIDER_NAME);
             
             try (InputStream in = new FileInputStream(path)) {
                 return loadCredentialFromStream(password, keyStore, in);
@@ -154,7 +154,7 @@ public class TrustyUtils {
         X509Certificate cert = null;
         
         try {
-            cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(removeNewLines(base64Encoded))));
+            cert = (X509Certificate) CertificateFactory.getInstance("X.509", KalkanProvider.PROVIDER_NAME).generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(removeNewLines(base64Encoded))));
         } catch (Exception e) {
             throw new CertificateParsingException(e);
         }
