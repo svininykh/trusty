@@ -1,5 +1,6 @@
 package ru.ussgroup.security.trusty;
 
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.util.Arrays;
@@ -25,7 +26,7 @@ public class SyncVerifySignatureExampleTest {
     private TrustySignatureVerifier signatureVerifier;
     
     @Before
-    public void init() {
+    public void init() throws UnknownHostException {
         TrustyRepository repository = new TrustyKeyStoreRepository("/ca/kalkan_repository.jks");
         
         TrustyCertPathValidator certPathValidator = new TrustyCertPathValidator(repository, KalkanProvider.PROVIDER_NAME);

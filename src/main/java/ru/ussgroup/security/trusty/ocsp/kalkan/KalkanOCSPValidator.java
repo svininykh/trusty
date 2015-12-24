@@ -1,5 +1,6 @@
 package ru.ussgroup.security.trusty.ocsp.kalkan;
 
+import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -22,7 +23,7 @@ public class KalkanOCSPValidator implements TrustyOCSPValidator {
     
     private final KalkanOCSPResponseChecker kalkanOCSPResponseChecker;
     
-    public KalkanOCSPValidator(String ocspUrl, String ip, TrustyRepository trustyRepository) {
+    public KalkanOCSPValidator(String ocspUrl, String ip, TrustyRepository trustyRepository) throws UnknownHostException {
         kalkanOCSPRequestSender = new KalkanOCSPRequestSender(ocspUrl, ip, trustyRepository);
         kalkanOCSPResponseChecker = new KalkanOCSPResponseChecker(trustyRepository);
     }

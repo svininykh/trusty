@@ -1,7 +1,7 @@
 package ru.ussgroup.security.trusty.ocsp.kalkan;
 
-import java.io.IOException;
 import java.net.Inet4Address;
+import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -29,8 +29,8 @@ import kz.gov.pki.kalkan.ocsp.OCSPException;
 import kz.gov.pki.kalkan.ocsp.OCSPReqGenerator;
 import kz.gov.pki.kalkan.ocsp.OCSPResp;
 import ru.ussgroup.security.trusty.exception.TrustyOCSPNotAvailableException;
+import ru.ussgroup.security.trusty.exception.TrustyOCSPUnknownProblemException;
 import ru.ussgroup.security.trusty.repository.TrustyRepository;
-import ru.ussgroup.security.trusty.utils.DnsResolver;
 
 /**
  * This class is thread-safe
@@ -38,13 +38,13 @@ import ru.ussgroup.security.trusty.utils.DnsResolver;
 public class KalkanOCSPRequestSender {
     private final String ocspUrl;
     
-    private final String ip;
-    
     private final TrustyRepository trustyRepository;
     
     private final static AsyncHttpClient httpClient;
     
     private final SecureRandom sr = new SecureRandom();
+    
+    private Inet4Address addr;
     
     static {
         if (Security.getProvider(KalkanProvider.PROVIDER_NAME) == null) Security.addProvider(new KalkanProvider());
@@ -64,29 +64,38 @@ public class KalkanOCSPRequestSender {
         });
     }
     
-    public KalkanOCSPRequestSender(String ocspUrl, String ip, TrustyRepository trustyRepository) {
+    public KalkanOCSPRequestSender(String ocspUrl, String ip, TrustyRepository trustyRepository) throws UnknownHostException {
         this.ocspUrl = ocspUrl;
-        this.ip = ip;
         this.trustyRepository = trustyRepository;
-        DnsResolver.addDomainName(ocspUrl);
+        this.addr = (Inet4Address) Inet4Address.getByName(ip);
     }
     
     public KalkanOCSPResponse sendRequest(Set<X509Certificate> certs) {
+        byte[] nonce = new byte[8];
+        sr.nextBytes(nonce);
+        
         try {
-            byte[] nonce = new byte[8];
-            sr.nextBytes(nonce);
-            
             List<CertificateID> ids = new ArrayList<>();
             
             for (X509Certificate cert : certs) {
                 //Указываем алгоритм хэширования.
                 //Принципиальной разницы для сервера нет и не зависит от алгоритма подписи сертификата
-                ids.add(new CertificateID(CertificateID.HASH_SHA1, trustyRepository.getIssuer(cert), cert.getSerialNumber(), KalkanProvider.PROVIDER_NAME));
+                X509Certificate issuer = trustyRepository.getIssuer(cert);
+                
+                if (issuer == null) {
+                    throw new TrustyOCSPUnknownProblemException("Certificate issuer not found");
+                }
+                
+                try {
+                    ids.add(new CertificateID(CertificateID.HASH_SHA1, issuer, cert.getSerialNumber(), KalkanProvider.PROVIDER_NAME));
+                } catch (OCSPException e) {
+                    throw new TrustyOCSPUnknownProblemException(e);
+                }
             }
             
             ListenableFuture<OCSPResp> f = httpClient.preparePost(ocspUrl)
                                                      .setHeader("Content-Type", "application/ocsp-request")
-                                                     .setInetAddress(Inet4Address.getByName(ip))
+                                                     .setInetAddress(addr)
                                                      .setBody(getOcspPackage(ids, nonce))
                                                      .execute(new AsyncCompletionHandler<OCSPResp>() {
                                                          @Override
@@ -106,21 +115,29 @@ public class KalkanOCSPRequestSender {
             }, r -> {r.run();});
             
             return new KalkanOCSPResponse(nonce, completableFuture);
-        } catch (OCSPException | IOException e) {
-            throw new RuntimeException(e);
+        } catch (TrustyOCSPUnknownProblemException e) {
+            CompletableFuture<OCSPResp> completableFuture = new CompletableFuture<>();
+            
+            completableFuture.completeExceptionally(new RuntimeException(e));
+            
+            return new KalkanOCSPResponse(nonce, completableFuture);
         }
     }
     
-    private byte[] getOcspPackage(List<CertificateID> ids, byte[] nonce) throws OCSPException, IOException {
-        OCSPReqGenerator gen = new OCSPReqGenerator();
-        
-        for (CertificateID id : ids) {
-            gen.addRequest(id);
+    private byte[] getOcspPackage(List<CertificateID> ids, byte[] nonce) throws TrustyOCSPUnknownProblemException {
+        try {
+            OCSPReqGenerator gen = new OCSPReqGenerator();
+            
+            for (CertificateID id : ids) {
+                gen.addRequest(id);
+            }
+            
+            gen.setRequestExtensions(generateExtensions(nonce));
+            
+            return gen.generate().getEncoded();
+        } catch (Exception e) {
+            throw new TrustyOCSPUnknownProblemException(e);
         }
-        
-        gen.setRequestExtensions(generateExtensions(nonce));
-        
-        return gen.generate().getEncoded();
     }
     
     private X509Extensions generateExtensions(byte[] nonce) {
